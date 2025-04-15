@@ -3,49 +3,44 @@ import Driver from '../models/Driver.js';
 
 // Create a new booking
 export const createBooking = async (req, res) => {
-    try {
-        const {
-            driverId,
-            startTime,
-            endTime,
-            pickupLocation,
-            dropLocation,
-            vehicleDetails
-        } = req.body;
-        
-        // Check if driver exists
-        const driver = await Driver.findById(driverId);
-        if (!driver) {
-            return res.status(404).json({ success: false, message: 'Driver not found' });
-        }
-        
-        // Calculate booking duration in hours
-        const start = new Date(startTime);
-        const end = new Date(endTime);
-        const durationHours = (end - start) / (1000 * 60 * 60);
-        
-        // Calculate total amount
-        const totalAmount = driver.hourlyRate * durationHours;
-        
-        // Create booking
-        const booking = await Booking.create({
-            user: req.user._id,
-            driver: driverId,
-            startTime,
-            endTime,
-            pickupLocation,
-            dropLocation,
-            vehicleDetails,
-            totalAmount,
-            status: 'pending',
-            paymentStatus: 'pending'
-        });
-        
-        res.status(201).json({ success: true, booking });
-    } catch (error) {
-        console.error(error);
-        res.status(500).json({ success: false, message: 'Server Error', error: error.message });
+  try {
+    const { driverId, startTime, endTime, pickupLocation, dropLocation, vehicleDetails, totalAmount } = req.body;
+    
+    // Get the user ID from the authenticated user
+    const userId = req.user._id;
+    
+    // Find the driver to verify it exists
+    const driver = await Driver.findById(driverId);
+    if (!driver) {
+      return res.status(404).json({ success: false, message: 'Driver not found' });
     }
+    
+    // Create the booking
+    const booking = await Booking.create({
+      user: userId,
+      driver: driverId, // This is correct - assigns to the driver field in schema
+      startTime,
+      endTime,
+      pickupLocation,
+      dropLocation,
+      vehicleDetails,
+      totalAmount: totalAmount || driver.hourlyRate * 4, // Calculate if not provided
+      status: 'pending',
+      paymentStatus: 'pending'
+    });
+    
+    res.status(201).json({
+      success: true,
+      booking
+    });
+  } catch (error) {
+    console.error('Create booking error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Server Error',
+      error: error.message
+    });
+  }
 };
 
 // Get all bookings for a user

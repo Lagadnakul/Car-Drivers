@@ -3,6 +3,13 @@ import User from '../models/User.js';
 
 // Register as a driver
 export const registerDriver = async (req, res) => {
+    console.log("=== DRIVER REGISTRATION REQUEST RECEIVED ===");
+    console.log("Headers:", req.headers);
+    console.log("Files:", req.files);
+    console.log("Body:", req.body);
+    console.log("User:", req.user);
+    console.log("===========================================");
+    
     try {
         const {
             experience,
@@ -12,9 +19,18 @@ export const registerDriver = async (req, res) => {
             hourlyRate
         } = req.body;
 
+        // Log the extracted data
+        console.log("Extracted data:");
+        console.log("- Experience:", experience);
+        console.log("- License Number:", licenseNumber);
+        console.log("- License Expiry:", licenseExpiry);
+        console.log("- Vehicle Types:", vehicleTypes);
+        console.log("- Hourly Rate:", hourlyRate);
+
         // Check if driver profile already exists
         const existingDriver = await Driver.findOne({ user: req.user._id });
         if (existingDriver) {
+            console.log("Driver profile already exists for user:", req.user._id);
             return res.status(400).json({ success: false, message: 'Driver profile already exists' });
         }
 
@@ -24,7 +40,7 @@ export const registerDriver = async (req, res) => {
             experience,
             licenseNumber,
             licenseExpiry,
-            vehicleTypes,
+            vehicleTypes: Array.isArray(vehicleTypes) ? vehicleTypes : [vehicleTypes], // Handle single string vs array
             hourlyRate,
             documents: {
                 licenseImage: req.files?.licenseImage ? req.files.licenseImage[0].path : '',
@@ -33,12 +49,16 @@ export const registerDriver = async (req, res) => {
             }
         });
 
+        console.log("Driver profile created successfully:", driver._id);
+
         // Update user role to driver
         await User.findByIdAndUpdate(req.user._id, { role: 'driver' });
+        console.log("User role updated to 'driver'");
 
         res.status(201).json({ success: true, driver });
     } catch (error) {
-        console.error(error);
+        console.error("ERROR IN DRIVER REGISTRATION:", error);
+        console.error("Stack trace:", error.stack);
         res.status(500).json({ success: false, message: 'Server Error', error: error.message });
     }
 };

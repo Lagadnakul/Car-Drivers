@@ -2,7 +2,6 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
-import Logo from '../assets/GoPilot-logo.png';
 
 const Navbar = () => {
   const { user, logout } = useAuth();
@@ -13,7 +12,11 @@ const Navbar = () => {
         <div className="flex justify-between h-16">
           <div className="flex items-center">
             <Link to="/" className="flex-shrink-0">
-              <img className="h-12 w-auto" src={Logo} alt="Go Pilot" />
+              <img 
+                className="h-12 w-auto" 
+                src="https://ik.imagekit.io/bxi3adntf/Car-Driver/Photos/Black_and_Green_Modern_Automotive_Logo-removebg-preview.png?updatedAt=1744453130929" 
+                alt="Go Pilot" 
+              />
             </Link>
             <div className="hidden md:ml-6 md:flex md:space-x-8">
               <Link to="/" className="text-gray-900 hover:text-blue-600 px-3 py-2 rounded-md text-sm font-medium">
