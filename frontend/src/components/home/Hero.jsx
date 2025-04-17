@@ -1,5 +1,5 @@
 // frontend/src/components/home/Hero.jsx
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaSearch, FaMapMarkerAlt, FaClock, FaCalendar } from 'react-icons/fa';
 

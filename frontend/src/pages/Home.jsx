@@ -1,5 +1,5 @@
 // frontend/src/pages/Home.jsx
-import React from 'react';
+
 import Hero from '../components/Hero';
 import BookingSearch from '../components/home/BookingSearch';
 import FeaturedPilots from '../components/home/FeaturedPilots';

@@ -1,8 +1,9 @@
 // frontend/src/components/layout/EnhancedNavbar.jsx
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { useAuth } from '../../hooks/useAuth';
 import { FaUser, FaBars, FaTimes } from 'react-icons/fa';
+
 
 const EnhancedNavbar = () => {
   const { user, logout } = useAuth();

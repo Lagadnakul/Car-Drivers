@@ -1,52 +1,56 @@
-// frontend/src/components/home/TestimonialCarousel.jsx
 import React, { useState, useEffect } from 'react';
+//eslint-disable-next-line
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaQuoteLeft, FaStar } from 'react-icons/fa';
+import { FaStar, FaQuoteLeft } from 'react-icons/fa';
+
+// Import local images
+import pilot1Image from '@assets/images/pilots/pilot1.jpg';
+import pilot2Image from '@assets/images/pilots/pilot2.jpg';
+import pilot3Image from '@assets/images/pilots/pilot3.jpg';
 
 const testimonials = [
   {
     id: 1,
-    name: "Sarah Johnson",
+    name: "John Smith",
     role: "Business Executive",
-    image: "https://ik.imagekit.io/bxi3adntf/Car-Driver/Photos/testimonials/testimonial-1.jpg",
-    comment: "The driver was punctual, professional, and made my business trip stress-free. Will definitely use this service again!",
+    image: pilot1Image,
+    comment: "Exceptional service! The drivers are always professional and punctual.",
     rating: 5
   },
   {
     id: 2,
-    name: "Michael Chen",
-    role: "Corporate Traveler",
-    image: "https://ik.imagekit.io/bxi3adntf/Car-Driver/Photos/testimonials/testimonial-2.jpg",
-    comment: "Excellent service! My driver was knowledgeable about the city and got me to all my meetings on time.",
-    rating: 5
+    name: "Sarah Johnson",
+    role: "Frequent Traveler",
+    image: pilot2Image,
+    comment: "Best chauffeur service I've experienced. Highly recommend!",
+    rating: 4.5
   },
   {
     id: 3,
-    name: "Emily Rodriguez",
-    role: "Event Planner",
-    image: "https://ik.imagekit.io/bxi3adntf/Car-Driver/Photos/testimonials/testimonial-3.jpg",
-    comment: "We hired multiple drivers for our corporate event. The service was impeccable and our guests were impressed!",
-    rating: 4.5
+    name: "Michael Rodriguez",
+    role: "Corporate Client",
+    image: pilot3Image,
+    comment: "Reliable and professional service. Always my first choice for business travel.",
+    rating: 5
   }
 ];
 
 const TestimonialCarousel = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   
-  // Auto advance testimonials
   useEffect(() => {
     const interval = setInterval(() => {
-      setCurrentIndex((prevIndex) => (prevIndex + 1) % testimonials.length);
+      setCurrentIndex((prev) => (prev + 1) % testimonials.length);
     }, 5000);
     
     return () => clearInterval(interval);
   }, []);
-  
+
   const renderStars = (rating) => {
     const stars = [];
     const fullStars = Math.floor(rating);
     const hasHalfStar = rating % 1 !== 0;
-    
+
     for (let i = 0; i < fullStars; i++) {
       stars.push(<FaStar key={i} className="text-yellow-400" />);
     }
@@ -69,18 +73,22 @@ const TestimonialCarousel = () => {
     
     return stars;
   };
-  
+
   return (
     <section className="py-20 bg-gray-50">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="text-center mb-12">
-          <span className="text-primary font-semibold text-sm uppercase tracking-wider">Testimonials</span>
-          <h2 className="mt-2 text-3xl md:text-4xl font-bold text-gray-900">What Our Customers Say</h2>
+          <span className="text-primary font-semibold text-sm uppercase tracking-wider">
+            Testimonials
+          </span>
+          <h2 className="mt-2 text-3xl md:text-4xl font-bold text-gray-900">
+            What Our Customers Say
+          </h2>
           <p className="mt-4 text-xl text-gray-600 max-w-2xl mx-auto">
             Read about the experiences of our satisfied customers
           </p>
         </div>
-        
+
         <div className="relative overflow-hidden">
           <AnimatePresence mode="wait">
             <motion.div
@@ -99,8 +107,8 @@ const TestimonialCarousel = () => {
                 <div className="flex flex-col md:flex-row items-center gap-8">
                   <div className="w-24 h-24 rounded-full overflow-hidden border-4 border-primary/20 flex-shrink-0">
                     <img 
-                      src={testimonials[currentIndex].image} 
-                      alt={testimonials[currentIndex].name} 
+                      src={testimonials[currentIndex].image}
+                      alt={testimonials[currentIndex].name}
                       className="w-full h-full object-cover"
                     />
                   </div>
@@ -112,14 +120,16 @@ const TestimonialCarousel = () => {
                     <p className="text-lg md:text-xl text-gray-700 italic mb-6">
                       "{testimonials[currentIndex].comment}"
                     </p>
-                    <h4 className="text-xl font-semibold text-gray-900">{testimonials[currentIndex].name}</h4>
+                    <h4 className="text-xl font-semibold text-gray-900">
+                      {testimonials[currentIndex].name}
+                    </h4>
                     <p className="text-gray-500">{testimonials[currentIndex].role}</p>
                   </div>
                 </div>
               </div>
             </motion.div>
           </AnimatePresence>
-          
+
           <div className="flex justify-center mt-8 gap-2">
             {testimonials.map((_, index) => (
               <button

@@ -1,106 +1,105 @@
-// frontend/src/context/AuthContext.jsx
-import React, { createContext, useState, useEffect } from 'react';
-import api from '../services/api';
-import { login } from '../services/authService';
+import  { createContext, useState, useEffect } from "react";
+import api from "../services/api";
+import { login as loginApi } from "../services/authService";
 
 export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
-  // Check if user is already logged in on page load
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    const token = localStorage.getItem('token');
-    
-    if (storedUser && token) {
-      setUser(JSON.parse(storedUser));
+    // Check if user is already logged in
+    const storedUser = JSON.parse(localStorage.getItem('user') || 'null');
+    if (storedUser) {
+      setUser(storedUser);
     }
-    
     setLoading(false);
   }, []);
 
-  const register = async (userData, isDriver = false, driverData = null, files = null) => {
+  const login = async (email, password) => {
+    setLoading(true);
+    setError(null);
     try {
-      let response;
-      let authToken;
-      
-      // Regular user registration
-      if (!isDriver) {
-        response = await api.post('/users/register', userData);
-        const { user: registeredUser, token } = response.data;
-        
-        // Save user data and token
-        localStorage.setItem('user', JSON.stringify(registeredUser));
-        localStorage.setItem('token', token);
-        
-        setUser(registeredUser);
-        return registeredUser;
-      } 
-      // Driver registration (with files)
-      else {
-        // First register the user
-        response = await api.post('/users/register', userData);
-        
-        const { user: registeredUser, token } = response.data;
-        authToken = token; // Store token for later use
-        
-        // Create form data for driver registration
-        const formData = new FormData();
-        
-        // Add driver details
-        Object.keys(driverData).forEach(key => {
-          formData.append(key, driverData[key]);
-        });
-        
-        // Add files if present
-        if (files) {
-          if (files.profilePhoto) formData.append('profilePhoto', files.profilePhoto);
-          if (files.licenseImage) formData.append('licenseImage', files.licenseImage);
-          if (files.vehiclePhoto) formData.append('vehiclePhoto', files.vehiclePhoto);
-          
-          // For multiple files like additional docs
-          if (files.additionalDocs) {
-            if (Array.isArray(files.additionalDocs)) {
-              files.additionalDocs.forEach(file => {
-                formData.append('additionalDocs', file);
-              });
-            } else {
-              formData.append('additionalDocs', files.additionalDocs);
-            }
-          }
-        }
-        
-        // Register as driver with the token from user registration
-        await api.post('/drivers/register', formData, {
-          headers: {
-            'Content-Type': 'multipart/form-data',
-            'Authorization': `Bearer ${authToken}`
-          }
-        });
-        
-        // Save user data and token
-        localStorage.setItem('user', JSON.stringify(registeredUser));
-        localStorage.setItem('token', authToken);
-        
-        setUser(registeredUser);
-        return registeredUser;
-      }
+      const userData = await loginApi(email, password);
+      // Store user in localStorage
+      localStorage.setItem('user', JSON.stringify(userData));
+      setUser(userData);
+      return userData;
     } catch (error) {
-      console.error("Registration error:", error.response?.data || error);
-      throw new Error(error.response?.data?.message || 'Registration failed');
+      const errorMsg = error.response?.data?.message || 'Login failed. Please check your credentials.';
+      setError(errorMsg);
+      throw new Error(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const register = async (userData) => {
+    setLoading(true);
+    setError(null);
+    try {
+      // Transform fullName to name if it exists
+      const formattedUserData = {
+        ...userData,
+        name: userData.fullName, // Add the name field expected by backend
+        fullName: undefined // Remove the fullName field
+      };
+      
+      const response = await api.post('/users/register', formattedUserData);
+      const newUserData = response.data;
+      
+      // Store user in localStorage
+      localStorage.setItem('user', JSON.stringify(newUserData));
+      setUser(newUserData);
+      return newUserData;
+    } catch (error) {
+      console.error("Registration error:", error.response?.data);
+      const errorMsg = error.response?.data?.message || error.response?.data?.error || 'Registration failed.';
+      setError(errorMsg);
+      throw error;
+    } finally {
+      setLoading(false);
     }
   };
 
   const logout = () => {
     localStorage.removeItem('user');
-    localStorage.removeItem('token');
     setUser(null);
   };
 
+  const updateProfile = async (userData) => {
+    setLoading(true);
+    try {
+      const response = await api.put('/users/profile', userData);
+      const updatedUserData = response.data;
+      
+      // Update localStorage
+      localStorage.setItem('user', JSON.stringify(updatedUserData));
+      setUser(updatedUserData);
+      return updatedUserData;
+    } catch (error) {
+      const errorMsg = error.response?.data?.message || 'Failed to update profile.';
+      setError(errorMsg);
+      throw new Error(errorMsg);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, register, logout }}>
+    <AuthContext.Provider
+      value={{
+        user,
+        loading,
+        error,
+        login,
+        register,
+        logout,
+        updateProfile
+      }}
+    >
       {children}
     </AuthContext.Provider>
   );

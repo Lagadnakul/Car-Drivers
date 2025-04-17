@@ -1,9 +1,14 @@
-// frontend/src/components/home/EnhancedCTA.jsx
 import React from 'react';
 import { Link } from 'react-router-dom';
-// eslint-disable-next-line no-unused-vars
+//eslint-disable-next-line
 import { motion } from 'framer-motion';
 import { FaArrowRight, FaCar, FaUserTie, FaClock, FaShieldAlt, FaStar } from 'react-icons/fa';
+
+// Import pilot images
+import pilot1Image from '@assets/images/pilots/pilot1.jpg';
+import pilot2Image from '@assets/images/pilots/pilot2.jpg';
+import pilot3Image from '@assets/images/pilots/pilot3.jpg';
+import pilot4Image from '@assets/images/pilots/pilot4.jpg';
 
 const FeatureCard = ({ icon, title, description, delay, className = "", link = null }) => (
   <motion.div
@@ -65,12 +70,20 @@ const EnhancedCTA = () => {
     }
   ];
 
+  const pilotImages = [pilot1Image, pilot2Image, pilot3Image, pilot4Image];
   return (
     <section className="py-20 bg-gradient-to-br from-gray-900 to-gray-800 relative overflow-hidden">
-      {/* Background pattern */}
+      {/* Remove or replace the grid pattern div with a CSS pattern */}
       <div className="absolute inset-0 opacity-10">
-        <div className="absolute top-0 left-0 w-full h-full bg-[url('https://ik.imagekit.io/bxi3adntf/Car-Driver/Photos/grid-pattern.png')] bg-repeat"></div>
+        <div 
+          className="absolute top-0 left-0 w-full h-full bg-repeat"
+          style={{ 
+            backgroundImage: `radial-gradient(circle, rgba(255,255,255,0.1) 1px, transparent 1px)`,
+            backgroundSize: '20px 20px'
+          }}
+        ></div>
       </div>
+      
       
       {/* Animated gradient orbs */}
       <div className="absolute top-1/4 left-1/4 w-64 h-64 bg-primary/30 rounded-full blur-[100px] animate-pulse"></div>
@@ -104,7 +117,8 @@ const EnhancedCTA = () => {
                 transition={{ duration: 0.6, delay: 0.2 }}
                 viewport={{ once: true }}
               >
-                Your journey deserves <span className="text-primary relative">
+                Your journey deserves{' '}
+                <span className="text-primary relative">
                   professional hands
                   <svg className="absolute -bottom-2 left-0 w-full h-2 text-primary/30" viewBox="0 0 200 8" preserveAspectRatio="none">
                     <path d="M0,5 C50,0 150,0 200,5" stroke="currentColor" strokeWidth="3" fill="none" />
@@ -165,11 +179,11 @@ const EnhancedCTA = () => {
                 viewport={{ once: true }}
               >
                 <div className="flex -space-x-3">
-                  {[1, 2, 3, 4].map(i => (
+                  {pilotImages.map((image, i) => (
                     <div key={i} className="w-10 h-10 rounded-full border-2 border-gray-900 overflow-hidden">
                       <img 
-                        src={`https://ik.imagekit.io/bxi3adntf/pilots/pilot${i}.jpg`} 
-                        alt="Happy customer" 
+                        src={image}
+                        alt={`Happy customer ${i + 1}`}
                         className="w-full h-full object-cover"
                       />
                     </div>
@@ -198,12 +212,7 @@ const EnhancedCTA = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <FeatureCard {...features[0]} />
               <FeatureCard {...features[1]} />
-              
-              <FeatureCard 
-                {...features[2]} 
-                className="md:col-span-2"
-              />
-              
+              <FeatureCard {...features[2]} className="md:col-span-2" />
               <div className="hidden md:flex md:col-span-2 md:space-x-4">
                 <FeatureCard {...features[3]} className="flex-1" />
                 <FeatureCard {...features[4]} className="flex-1" />

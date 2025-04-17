@@ -1,38 +1,45 @@
-// frontend/src/services/api.js
 import axios from 'axios';
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+// Base URL from environment variables
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
+// Create Axios instance
 const api = axios.create({
-  baseURL: API_URL,
+  baseURL: BASE_URL,
+  timeout: 30000, // 30 seconds
   headers: {
     'Content-Type': 'application/json',
-  },
+  }
 });
 
-// Add a request interceptor to include auth token in requests
+// Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
+    const user = JSON.parse(localStorage.getItem('user') || '{}');
+    if (user && user.token) {
+      config.headers['Authorization'] = `Bearer ${user.token}`;
     }
     return config;
   },
-  (error) => Promise.reject(error)
+  (error) => {
+    return Promise.reject(error);
+  }
 );
 
-// Add a response interceptor to handle errors
+// Response interceptor for error handling
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    return response;
+  },
   (error) => {
-    // Handle 401 unauthorized errors (e.g., token expired)
+    // Handle unauthorized responses (token expired, etc.)
     if (error.response && error.response.status === 401) {
-      localStorage.removeItem('token');
+      // Clear user data and redirect to login
       localStorage.removeItem('user');
-      // Redirect to login page if needed
       window.location.href = '/login';
+      return Promise.reject(new Error('Session expired. Please log in again.'));
     }
+    
     return Promise.reject(error);
   }
 );

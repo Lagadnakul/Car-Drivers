@@ -1,9 +1,14 @@
-// frontend/src/components/home/ServiceHighlights.jsx
 import React from 'react';
 import { Link } from 'react-router-dom';
+//eslint-disable-next-line
 import { motion } from 'framer-motion';
 import { FaCar, FaPlane, FaBriefcase, FaGlassMartini } from 'react-icons/fa';
 
+// Import local images - updated names to match your directory
+import cityTransferImage from '@assets/images/services/city-transfer.jpg';
+import airportImage from '@assets/images/services/airport-pickup.jpg';
+import corporateImage from '@assets/images/services/corporate-travel.jpg';
+import eventsImage from '@assets/images/services/special-events.jpg';
 const ServiceCard = ({ icon, title, description, image, link }) => {
   return (
     <motion.div 
@@ -48,28 +53,28 @@ const ServiceHighlights = () => {
       icon: <FaCar className="h-6 w-6 text-white" />,
       title: "City Transfers",
       description: "Comfortable and reliable transportation within the city for any occasion",
-      image: "https://ik.imagekit.io/bxi3adntf/Car-Driver/Photos/services/city-transfer.jpg",
+      image: cityTransferImage,
       link: "/services/city-transfers"
     },
     {
       icon: <FaPlane className="h-6 w-6 text-white" />,
       title: "Airport Pickups",
       description: "On-time airport transfers with flight monitoring and wait time included",
-      image: "https://ik.imagekit.io/bxi3adntf/Car-Driver/Photos/services/airport-pickup.jpg",
+      image: airportImage,
       link: "/services/airport-pickups"
     },
     {
       icon: <FaBriefcase className="h-6 w-6 text-white" />,
       title: "Corporate Travel",
       description: "Professional transportation solutions for business executives and teams",
-      image: "https://ik.imagekit.io/bxi3adntf/Car-Driver/Photos/services/corporate-travel.jpg",
+      image: corporateImage,
       link: "/services/corporate-travel"
     },
     {
       icon: <FaGlassMartini className="h-6 w-6 text-white" />,
       title: "Special Events",
       description: "Luxury transportation for weddings, anniversaries and special occasions",
-      image: "https://ik.imagekit.io/bxi3adntf/Car-Driver/Photos/services/special-events.jpg",
+      image: eventsImage,
       link: "/services/special-events"
     }
   ];
