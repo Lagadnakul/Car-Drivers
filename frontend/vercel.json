@@ -1,0 +1,32 @@
+{
+  "version": 2,
+  "name": "gopilot-client",
+  "builds": [
+    {
+      "src": "package.json",
+      "use": "@vercel/static-build",
+      "config": {
+        "distDir": "dist"
+      }
+    }
+  ],
+  "routes": [
+    {
+      "src": "/assets/(.*)",
+      "dest": "/assets/$1"
+    },
+    {
+      "src": "/(.*)\\.(.+)",
+      "dest": "/$1.$2"
+    },
+    {
+      "src": "/(.*)",
+      "dest": "/index.html"
+    }
+  ],
+  "env": {
+    "VITE_API_URL": "@api_url",
+    "VITE_IMAGEKIT_URL": "@imagekit_url",
+    "VITE_IMAGEKIT_PUBLIC_KEY": "@imagekit_public_key"
+  }
+}

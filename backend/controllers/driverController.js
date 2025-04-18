@@ -1,15 +1,9 @@
 import Driver from '../models/Driver.js';
 import User from '../models/User.js';
+import { uploadToImageKit } from '../utils/fileUpload.js';
 
 // Register as a driver
 export const registerDriver = async (req, res) => {
-    console.log("=== DRIVER REGISTRATION REQUEST RECEIVED ===");
-    console.log("Headers:", req.headers);
-    console.log("Files:", req.files);
-    console.log("Body:", req.body);
-    console.log("User:", req.user);
-    console.log("===========================================");
-    
     try {
         const {
             experience,
@@ -19,19 +13,47 @@ export const registerDriver = async (req, res) => {
             hourlyRate
         } = req.body;
 
-        // Log the extracted data
-        console.log("Extracted data:");
-        console.log("- Experience:", experience);
-        console.log("- License Number:", licenseNumber);
-        console.log("- License Expiry:", licenseExpiry);
-        console.log("- Vehicle Types:", vehicleTypes);
-        console.log("- Hourly Rate:", hourlyRate);
-
         // Check if driver profile already exists
         const existingDriver = await Driver.findOne({ user: req.user._id });
         if (existingDriver) {
-            console.log("Driver profile already exists for user:", req.user._id);
             return res.status(400).json({ success: false, message: 'Driver profile already exists' });
+        }
+
+        // Handle file uploads to ImageKit
+        const documents = { licenseImage: '', profilePhoto: '', additionalDocs: [] };
+        
+        if (req.files) {
+            // Upload license image if provided
+            if (req.files.licenseImage) {
+                const licenseFile = req.files.licenseImage[0];
+                documents.licenseImage = await uploadToImageKit(
+                    licenseFile.buffer,
+                    `license-${Date.now()}-${licenseFile.originalname}`,
+                    'licenses'
+                );
+            }
+            
+            // Upload profile photo if provided
+            if (req.files.profilePhoto) {
+                const profileFile = req.files.profilePhoto[0];
+                documents.profilePhoto = await uploadToImageKit(
+                    profileFile.buffer,
+                    `profile-${Date.now()}-${profileFile.originalname}`,
+                    'profiles'
+                );
+            }
+            
+            // Upload additional documents if provided
+            if (req.files.additionalDocs) {
+                const uploadPromises = req.files.additionalDocs.map(async (file) => {
+                    return await uploadToImageKit(
+                        file.buffer,
+                        `doc-${Date.now()}-${file.originalname}`,
+                        'documents'
+                    );
+                });
+                documents.additionalDocs = await Promise.all(uploadPromises);
+            }
         }
 
         // Create driver profile
@@ -40,25 +62,17 @@ export const registerDriver = async (req, res) => {
             experience,
             licenseNumber,
             licenseExpiry,
-            vehicleTypes: Array.isArray(vehicleTypes) ? vehicleTypes : [vehicleTypes], // Handle single string vs array
+            vehicleTypes: Array.isArray(vehicleTypes) ? vehicleTypes : [vehicleTypes],
             hourlyRate,
-            documents: {
-                licenseImage: req.files?.licenseImage ? req.files.licenseImage[0].path : '',
-                profilePhoto: req.files?.profilePhoto ? req.files.profilePhoto[0].path : '',
-                additionalDocs: req.files?.additionalDocs ? req.files.additionalDocs.map(file => file.path) : []
-            }
+            documents
         });
-
-        console.log("Driver profile created successfully:", driver._id);
 
         // Update user role to driver
         await User.findByIdAndUpdate(req.user._id, { role: 'driver' });
-        console.log("User role updated to 'driver'");
 
         res.status(201).json({ success: true, driver });
     } catch (error) {
-        console.error("ERROR IN DRIVER REGISTRATION:", error);
-        console.error("Stack trace:", error.stack);
+        console.error("Error in driver registration:", error.message);
         res.status(500).json({ success: false, message: 'Server Error', error: error.message });
     }
 };
@@ -82,7 +96,7 @@ export const getAllDrivers = async (req, res) => {
         
         res.json({ success: true, count: drivers.length, drivers });
     } catch (error) {
-        console.error(error);
+        console.error("Error fetching drivers:", error.message);
         res.status(500).json({ success: false, message: 'Server Error', error: error.message });
     }
 };
@@ -98,7 +112,7 @@ export const getDriverById = async (req, res) => {
         
         res.json({ success: true, driver });
     } catch (error) {
-        console.error(error);
+        console.error("Error fetching driver by ID:", error.message);
         res.status(500).json({ success: false, message: 'Server Error', error: error.message });
     }
 };
@@ -129,14 +143,36 @@ export const updateDriverProfile = async (req, res) => {
         driver.isAvailable = isAvailable !== undefined ? isAvailable : driver.isAvailable;
         
         if (req.files) {
+            // Upload license image if provided
             if (req.files.licenseImage) {
-                driver.documents.licenseImage = req.files.licenseImage[0].path;
+                const licenseFile = req.files.licenseImage[0];
+                driver.documents.licenseImage = await uploadToImageKit(
+                    licenseFile.buffer,
+                    `license-${Date.now()}-${licenseFile.originalname}`,
+                    'licenses'
+                );
             }
+            
+            // Upload profile photo if provided
             if (req.files.profilePhoto) {
-                driver.documents.profilePhoto = req.files.profilePhoto[0].path;
+                const profileFile = req.files.profilePhoto[0];
+                driver.documents.profilePhoto = await uploadToImageKit(
+                    profileFile.buffer,
+                    `profile-${Date.now()}-${profileFile.originalname}`,
+                    'profiles'
+                );
             }
+            
+            // Upload additional documents if provided
             if (req.files.additionalDocs) {
-                driver.documents.additionalDocs = req.files.additionalDocs.map(file => file.path);
+                const uploadPromises = req.files.additionalDocs.map(async (file) => {
+                    return await uploadToImageKit(
+                        file.buffer,
+                        `doc-${Date.now()}-${file.originalname}`,
+                        'documents'
+                    );
+                });
+                driver.documents.additionalDocs = await Promise.all(uploadPromises);
             }
         }
         
@@ -144,7 +180,7 @@ export const updateDriverProfile = async (req, res) => {
         
         res.json({ success: true, driver: updatedDriver });
     } catch (error) {
-        console.error(error);
+        console.error("Error updating driver profile:", error.message);
         res.status(500).json({ success: false, message: 'Server Error', error: error.message });
     }
 };
@@ -167,7 +203,7 @@ export const toggleAvailability = async (req, res) => {
             isAvailable: driver.isAvailable
         });
     } catch (error) {
-        console.error(error);
+        console.error("Error toggling driver availability:", error.message);
         res.status(500).json({ success: false, message: 'Server Error', error: error.message });
     }
 };
