@@ -1,0 +1,45 @@
+version: '3.8'
+
+services:
+  api:
+    build: .
+    container_name: gopilot-api
+    restart: unless-stopped
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - MONGO_URI=mongodb://mongo:27017/gopilot
+      - JWT_SECRET=${JWT_SECRET}
+      - IMAGEKIT_PUBLIC_KEY=${IMAGEKIT_PUBLIC_KEY}
+      - IMAGEKIT_PRIVATE_KEY=${IMAGEKIT_PRIVATE_KEY}
+      - IMAGEKIT_URL_ENDPOINT=${IMAGEKIT_URL_ENDPOINT}
+      - FRONTEND_URL=${FRONTEND_URL:-http://localhost:3000}
+    volumes:
+      - ./uploads:/app/uploads
+    depends_on:
+      - mongo
+    networks:
+      - gopilot-network
+
+  mongo:
+    image: mongo:6
+    container_name: gopilot-mongo
+    restart: unless-stopped
+    environment:
+      - MONGO_INITDB_DATABASE=gopilot
+    volumes:
+      - mongo-data:/data/db
+    ports:
+      - "27017:27017"
+    networks:
+      - gopilot-network
+
+volumes:
+  mongo-data:
+    driver: local
+
+networks:
+  gopilot-network:
+    driver: bridge

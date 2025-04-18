@@ -1,0 +1,26 @@
+services:
+  # API Service
+  - type: web
+    name: gopilot-api
+    env: node
+    plan: starter
+    buildCommand: npm ci
+    startCommand: node server.js
+    autoDeploy: true
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 10000
+      - key: MONGO_URI
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: IMAGEKIT_PUBLIC_KEY
+        sync: false
+      - key: IMAGEKIT_PRIVATE_KEY
+        sync: false
+      - key: IMAGEKIT_URL_ENDPOINT
+        sync: false
+      - key: FRONTEND_URL
+        value: https://gopilot-web.onrender.com
