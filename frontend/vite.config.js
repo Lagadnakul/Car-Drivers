@@ -19,17 +19,16 @@ export default defineConfig({
       '@pages': path.resolve(__dirname, './src/pages')
     }
   },
+
   build: {
     assetsDir: 'assets',
     rollupOptions: {
       output: {
         assetFileNames: ({ name }) => {
           const ext = path.extname(name).slice(1);
-          // Handle images
           if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(ext)) {
             return 'assets/images/[name]-[hash][extname]';
           }
-          // Handle other assets
           return 'assets/[ext]/[name]-[hash][extname]';
         },
         chunkFileNames: 'assets/js/[name]-[hash].js',
@@ -47,16 +46,22 @@ export default defineConfig({
     host: true,
     watch: {
       usePolling: true
+    },
+    proxy: {
+      '/api': {
+        target: 'http://localhost:5000',
+        changeOrigin: true,
+        secure: false,
+        rewrite: (path) => path.replace(/^\/api/, '')
+      }
     }
   },
 
-  // Enable optimizeDeps for better performance
   optimizeDeps: {
     include: ['react', 'react-dom'],
     exclude: []
   },
 
-  // CSS configuration
   css: {
     modules: {
       localsConvention: 'camelCase'
@@ -68,12 +73,9 @@ export default defineConfig({
     }
   },
 
-  // Environment variables configuration
   envPrefix: 'VITE_',
   
-  // Performance configurations
   esbuild: {
-    target: 'esnext',
-    
+    target: 'esnext'
   }
 });

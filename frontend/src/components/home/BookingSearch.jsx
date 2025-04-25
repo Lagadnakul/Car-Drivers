@@ -1,4 +1,3 @@
-// frontend/src/components/home/BookingSearch.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaMapMarkerAlt, FaCalendarAlt, FaClock, FaCarSide } from 'react-icons/fa';
@@ -7,23 +6,71 @@ const BookingSearch = () => {
   const navigate = useNavigate();
   const [formData, setFormData] = useState({
     pickupLocation: '',
-    dropoffLocation: '',
+    dropoffLocation: '', 
     date: '',
     time: '',
     vehicleType: ''
   });
-  
+
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    setFormData(prevState => ({
+      ...prevState,
+      [name]: value
+    }));
+    // Clear any previous errors when user makes changes
+    setError(null);
   };
-  
-  const handleSubmit = (e) => {
+
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    // Pass search parameters to the booking page
-    navigate('/booking', { state: { searchParams: formData } });
+    setLoading(true);
+    setError(null);
+
+    try {
+      const searchParams = new URLSearchParams({
+        ...formData,
+        date: new Date(formData.date).toISOString(),
+        time: formData.time
+      }).toString();
+
+      const response = await fetch(`/api/drivers/search?${searchParams}`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to search pilots');
+      }
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        navigate('/pilots/search', { 
+          state: { 
+            searchParams: formData,
+            results: data.drivers 
+          }
+        });
+      } else {
+        throw new Error(data.message || 'Failed to search pilots');
+      }
+    } catch (error) {
+      console.error('Search error:', error);
+      setError('Failed to search pilots. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
-  
+
+  // Get today's date for min date attribute
+  const today = new Date().toISOString().split('T')[0];
+
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 -mt-24 relative z-20">
       <div className="bg-white rounded-xl shadow-xl p-6 md:p-8">
@@ -73,6 +120,7 @@ const BookingSearch = () => {
                 name="date"
                 value={formData.date}
                 onChange={handleChange}
+                min={today}
                 className="w-full px-4 py-3 rounded-lg border border-gray-300 focus:ring-2 focus:ring-primary focus:border-primary"
                 required
               />
@@ -113,13 +161,20 @@ const BookingSearch = () => {
               
               <button
                 type="submit"
-                className="mt-6 md:mt-8 w-full py-3 px-6 bg-primary hover:bg-primary/90 text-white rounded-lg font-medium transition-colors"
+                disabled={loading}
+                className="mt-6 md:mt-8 w-full py-3 px-6 bg-primary hover:bg-primary/90 text-white rounded-lg font-medium transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Search Pilots
+                {loading ? 'Searching...' : 'Search Pilots'}
               </button>
             </div>
           </div>
         </form>
+
+        {error && (
+          <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg">
+            {error}
+          </div>
+        )}
       </div>
     </div>
   );
