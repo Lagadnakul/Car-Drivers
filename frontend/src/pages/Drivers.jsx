@@ -4,8 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { FaSearch, FaFilter, FaStar, FaCheck } from 'react-icons/fa';
 import PilotCard from '../components/PilotCard';
-import { driverService } from '../services/driverService';
-
+import driverService from '../services/driverService';
 const Drivers = () => {
   const [drivers, setDrivers] = useState([]);
   const [filteredDrivers, setFilteredDrivers] = useState([]);

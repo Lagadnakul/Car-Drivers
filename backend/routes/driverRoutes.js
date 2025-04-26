@@ -12,24 +12,24 @@ import upload from '../utils/fileUpload.js';
 
 const router = express.Router();
 
-// Configure multer upload
+// Configure multer upload for driver documents
 const driverUpload = upload.fields([
   { name: 'licenseImage', maxCount: 1 },
   { name: 'profilePhoto', maxCount: 1 },
   { name: 'additionalDocs', maxCount: 5 }
 ]);
 
-// Public routes
+// Public routes - accessible without authentication
 router.get('/search', searchDrivers);
 router.get('/', getAllDrivers);
 router.get('/:id', getDriverById);
 
-// Protected driver routes
+// Protected driver routes - requires authentication and driver role
 router.post('/register', protect, driverUpload, registerDriver);
 router.put('/profile', protect, driver, driverUpload, updateDriverProfile);
 router.put('/toggle-availability', protect, driver, toggleAvailability);
 
-// Admin routes
+// Admin routes - requires authentication and admin role
 router.get('/admin/all', protect, admin, getAllDrivers);
 
 export default router;

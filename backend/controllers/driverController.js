@@ -4,25 +4,33 @@ import User from '../models/User.js';
 // Search drivers
 export const searchDrivers = async (req, res) => {
   try {
-    const { pickupLocation, date, time, vehicleType, minRating, maxPrice } = req.query;
+    const { pickupLocation, dropoffLocation, date, time, vehicleType } = req.query;
     
+    // Build search query
     let query = { isAvailable: true };
     
+    // Add vehicle type filter
     if (vehicleType) {
       query.vehicleTypes = vehicleType;
     }
-    
-    if (maxPrice) {
-      query.hourlyRate = { $lte: parseFloat(maxPrice) };
+
+    // Add date/time availability filter if provided
+    if (date && time) {
+      const searchDateTime = new Date(`${date}T${time}`);
+      query.availabilitySchedule = {
+        $not: {
+          $elemMatch: {
+            startTime: { $lte: searchDateTime },
+            endTime: { $gte: searchDateTime }
+          }
+        }
+      };
     }
-    
-    if (minRating) {
-      query.rating = { $gte: parseFloat(minRating) };
-    }
-    
+
+    // Find drivers matching criteria
     const drivers = await Driver.find(query)
       .populate('user', 'name email phone')
-      .select('-__v');
+      .select('-__v -password');
     
     res.json({
       success: true,
@@ -32,7 +40,7 @@ export const searchDrivers = async (req, res) => {
   } catch (error) {
     console.error('Search drivers error:', error);
     res.status(500).json({
-      success: false, 
+      success: false,
       message: 'Error searching drivers',
       error: error.message
     });
@@ -47,9 +55,11 @@ export const registerDriver = async (req, res) => {
       licenseNumber,
       licenseExpiry,
       vehicleTypes,
-      hourlyRate
+      hourlyRate,
+      availability
     } = req.body;
 
+    // Check if driver profile already exists
     const existingDriver = await Driver.findOne({ user: req.user._id });
     if (existingDriver) {
       return res.status(400).json({ 
@@ -58,6 +68,7 @@ export const registerDriver = async (req, res) => {
       });
     }
 
+    // Create new driver profile
     const driver = await Driver.create({
       user: req.user._id,
       experience,
@@ -65,16 +76,25 @@ export const registerDriver = async (req, res) => {
       licenseExpiry,
       vehicleTypes: Array.isArray(vehicleTypes) ? vehicleTypes : [vehicleTypes],
       hourlyRate,
+      isAvailable: true,
+      rating: 0,
+      completedTrips: 0,
       documents: {
         licenseImage: req.files?.licenseImage ? req.files.licenseImage[0].path : '',
         profilePhoto: req.files?.profilePhoto ? req.files.profilePhoto[0].path : '',
         additionalDocs: req.files?.additionalDocs ? req.files.additionalDocs.map(file => file.path) : []
-      }
+      },
+      availability
     });
 
+    // Update user role to driver
     await User.findByIdAndUpdate(req.user._id, { role: 'driver' });
 
-    res.status(201).json({ success: true, driver });
+    res.status(201).json({ 
+      success: true, 
+      message: 'Driver registered successfully',
+      driver 
+    });
   } catch (error) {
     console.error('Driver registration error:', error);
     res.status(500).json({
@@ -85,13 +105,14 @@ export const registerDriver = async (req, res) => {
   }
 };
 
-// Get all drivers
+// Get all drivers with filters
 export const getAllDrivers = async (req, res) => {
   try {
-    const { vehicleType, available, minRating, maxPrice } = req.query;
+    const { vehicleType, available, minRating, maxPrice, sort = '-rating' } = req.query;
     
     let query = {};
     
+    // Apply filters
     if (vehicleType) {
       query.vehicleTypes = vehicleType;
     }
@@ -108,9 +129,11 @@ export const getAllDrivers = async (req, res) => {
       query.hourlyRate = { $lte: parseFloat(maxPrice) };
     }
     
+    // Get drivers with filters and sorting
     const drivers = await Driver.find(query)
       .populate('user', 'name email phone')
-      .select('-__v');
+      .select('-__v')
+      .sort(sort);
     
     res.json({
       success: true,
@@ -170,18 +193,22 @@ export const updateDriverProfile = async (req, res) => {
       licenseExpiry,
       vehicleTypes,
       hourlyRate,
-      isAvailable
+      isAvailable,
+      availability
     } = req.body;
     
+    // Update fields
     Object.assign(driver, {
       experience: experience || driver.experience,
       licenseNumber: licenseNumber || driver.licenseNumber,
       licenseExpiry: licenseExpiry || driver.licenseExpiry,
       vehicleTypes: vehicleTypes || driver.vehicleTypes,
       hourlyRate: hourlyRate || driver.hourlyRate,
-      isAvailable: isAvailable !== undefined ? isAvailable : driver.isAvailable
+      isAvailable: isAvailable !== undefined ? isAvailable : driver.isAvailable,
+      availability: availability || driver.availability
     });
     
+    // Update documents if provided
     if (req.files) {
       if (req.files.licenseImage) {
         driver.documents.licenseImage = req.files.licenseImage[0].path;
@@ -196,7 +223,11 @@ export const updateDriverProfile = async (req, res) => {
     
     const updatedDriver = await driver.save();
     
-    res.json({ success: true, driver: updatedDriver });
+    res.json({
+      success: true,
+      message: 'Profile updated successfully',
+      driver: updatedDriver
+    });
   } catch (error) {
     console.error('Update driver error:', error);
     res.status(500).json({

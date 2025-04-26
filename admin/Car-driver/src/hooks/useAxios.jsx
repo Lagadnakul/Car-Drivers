@@ -1,5 +1,36 @@
 import { useState, useEffect, useCallback } from 'react';
-import api from '../services/api';
+import axios from 'axios';
+
+const api = axios.create({
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  withCredentials: true
+});
+
+// Add request interceptor for auth token
+api.interceptors.request.use((config) => {
+  const token = localStorage.getItem('token');
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
+// Add response interceptor for error handling
+api.interceptors.response.use(
+  (response) => response,
+  (error) => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      window.location.href = '/login';
+      return Promise.reject(new Error('Session expired. Please log in again.'));
+    }
+    return Promise.reject(error);
+  }
+);
 
 /**
  * Custom hook for making API requests
@@ -15,17 +46,18 @@ const useAxios = ({ url, method = 'get', body = null, immediate = true }) => {
   const [loading, setLoading] = useState(immediate);
   const [error, setError] = useState(null);
 
-  const fetchData = useCallback(async (overrideBody = null) => {
+  const fetchData = useCallback(async (options = {}) => {
     setLoading(true);
     setError(null);
 
     try {
       let response;
-      const requestBody = overrideBody || body;
+      const requestBody = options.body || body;
+      const requestParams = options.params || {};
 
       switch (method.toLowerCase()) {
         case 'get':
-          response = await api.get(url);
+          response = await api.get(url, { params: requestParams });
           break;
         case 'post':
           response = await api.post(url, requestBody);
@@ -34,7 +66,7 @@ const useAxios = ({ url, method = 'get', body = null, immediate = true }) => {
           response = await api.put(url, requestBody);
           break;
         case 'delete':
-          response = await api.delete(url);
+          response = await api.delete(url, { data: requestBody });
           break;
         default:
           throw new Error(`Unsupported HTTP method: ${method}`);
@@ -57,7 +89,7 @@ const useAxios = ({ url, method = 'get', body = null, immediate = true }) => {
     }
   }, [immediate, fetchData]);
 
-  return { data, loading, error, refetch: fetchData };
+  return { data, loading, error, fetchData };
 };
 
 export default useAxios;

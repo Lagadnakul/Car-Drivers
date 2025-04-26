@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { FaMapMarkerAlt, FaCalendarAlt, FaClock, FaCarSide } from 'react-icons/fa';
+import { useAxios } from '../../hooks/useAxios';
 
 const BookingSearch = () => {
   const navigate = useNavigate();
@@ -12,8 +13,11 @@ const BookingSearch = () => {
     vehicleType: ''
   });
 
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState(null);
+  const { fetchData: searchPilots, loading, error: apiError } = useAxios({
+    url: '/api/drivers/search',
+    method: 'get',
+    immediate: false
+  });
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -21,34 +25,19 @@ const BookingSearch = () => {
       ...prevState,
       [name]: value
     }));
-    // Clear any previous errors when user makes changes
-    setError(null);
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-    setError(null);
-
+    
     try {
-      const searchParams = new URLSearchParams({
+      const params = new URLSearchParams({
         ...formData,
         date: new Date(formData.date).toISOString(),
         time: formData.time
-      }).toString();
-
-      const response = await fetch(`/api/drivers/search?${searchParams}`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json'
-        }
       });
-      
-      if (!response.ok) {
-        throw new Error('Failed to search pilots');
-      }
-      
-      const data = await response.json();
+
+      const data = await searchPilots({ params });
       
       if (data.success) {
         navigate('/pilots/search', { 
@@ -57,14 +46,9 @@ const BookingSearch = () => {
             results: data.drivers 
           }
         });
-      } else {
-        throw new Error(data.message || 'Failed to search pilots');
       }
     } catch (error) {
       console.error('Search error:', error);
-      setError('Failed to search pilots. Please try again.');
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -170,9 +154,9 @@ const BookingSearch = () => {
           </div>
         </form>
 
-        {error && (
+        {apiError && (
           <div className="mt-4 p-3 bg-red-50 border border-red-200 text-red-700 rounded-lg">
-            {error}
+            {apiError}
           </div>
         )}
       </div>

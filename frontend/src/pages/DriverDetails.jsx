@@ -4,7 +4,7 @@ import { useParams, Link, useNavigate } from 'react-router-dom';
 // eslint-disable-next-line no-unused-vars
 import { motion, AnimatePresence } from 'framer-motion';
 import { FaStar, FaCar, FaCheck, FaCalendarAlt, FaClock, FaMapMarkerAlt, FaPhoneAlt, FaEnvelope, FaLanguage, FaShieldAlt, FaCertificate, FaTimes, FaUserTie } from 'react-icons/fa';
-import { driverService } from '../services/driverService';
+import driverService from '../services/driverService';
 
 const DriverDetails = () => {
   const { id } = useParams();
