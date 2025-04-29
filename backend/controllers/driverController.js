@@ -1,20 +1,17 @@
 import Driver from '../models/Driver.js';
 import User from '../models/User.js';
+import Booking from '../models/Booking.js';
 
-// Search drivers
-export const searchDrivers = async (req, res) => {
+const searchDrivers = async (req, res) => {
   try {
     const { pickupLocation, dropoffLocation, date, time, vehicleType } = req.query;
     
-    // Build search query
     let query = { isAvailable: true };
     
-    // Add vehicle type filter
     if (vehicleType) {
       query.vehicleTypes = vehicleType;
     }
 
-    // Add date/time availability filter if provided
     if (date && time) {
       const searchDateTime = new Date(`${date}T${time}`);
       query.availabilitySchedule = {
@@ -27,7 +24,6 @@ export const searchDrivers = async (req, res) => {
       };
     }
 
-    // Find drivers matching criteria
     const drivers = await Driver.find(query)
       .populate('user', 'name email phone')
       .select('-__v -password');
@@ -47,8 +43,37 @@ export const searchDrivers = async (req, res) => {
   }
 };
 
-// Register as a driver
-export const registerDriver = async (req, res) => {
+const getDriverBookings = async (req, res) => {
+  try {
+    const driver = await Driver.findOne({ user: req.user._id });
+    
+    if (!driver) {
+      return res.status(404).json({
+        success: false,
+        message: 'Driver profile not found'
+      });
+    }
+
+    const bookings = await Booking.find({ driver: driver._id })
+      .populate('user', 'name email phone')
+      .sort('-createdAt');
+
+    res.json({
+      success: true,
+      count: bookings.length,
+      bookings
+    });
+  } catch (error) {
+    console.error('Get driver bookings error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error fetching bookings',
+      error: error.message
+    });
+  }
+};
+
+const registerDriver = async (req, res) => {
   try {
     const {
       experience,
@@ -59,7 +84,6 @@ export const registerDriver = async (req, res) => {
       availability
     } = req.body;
 
-    // Check if driver profile already exists
     const existingDriver = await Driver.findOne({ user: req.user._id });
     if (existingDriver) {
       return res.status(400).json({ 
@@ -68,7 +92,6 @@ export const registerDriver = async (req, res) => {
       });
     }
 
-    // Create new driver profile
     const driver = await Driver.create({
       user: req.user._id,
       experience,
@@ -87,13 +110,12 @@ export const registerDriver = async (req, res) => {
       availability
     });
 
-    // Update user role to driver
     await User.findByIdAndUpdate(req.user._id, { role: 'driver' });
 
-    res.status(201).json({ 
-      success: true, 
+    res.status(201).json({
+      success: true,
       message: 'Driver registered successfully',
-      driver 
+      driver
     });
   } catch (error) {
     console.error('Driver registration error:', error);
@@ -105,14 +127,12 @@ export const registerDriver = async (req, res) => {
   }
 };
 
-// Get all drivers with filters
-export const getAllDrivers = async (req, res) => {
+const getAllDrivers = async (req, res) => {
   try {
     const { vehicleType, available, minRating, maxPrice, sort = '-rating' } = req.query;
     
     let query = {};
     
-    // Apply filters
     if (vehicleType) {
       query.vehicleTypes = vehicleType;
     }
@@ -129,7 +149,6 @@ export const getAllDrivers = async (req, res) => {
       query.hourlyRate = { $lte: parseFloat(maxPrice) };
     }
     
-    // Get drivers with filters and sorting
     const drivers = await Driver.find(query)
       .populate('user', 'name email phone')
       .select('-__v')
@@ -150,8 +169,7 @@ export const getAllDrivers = async (req, res) => {
   }
 };
 
-// Get driver by ID
-export const getDriverById = async (req, res) => {
+const getDriverById = async (req, res) => {
   try {
     const driver = await Driver.findById(req.params.id)
       .populate('user', 'name email phone')
@@ -175,8 +193,7 @@ export const getDriverById = async (req, res) => {
   }
 };
 
-// Update driver profile
-export const updateDriverProfile = async (req, res) => {
+const updateDriverProfile = async (req, res) => {
   try {
     const driver = await Driver.findOne({ user: req.user._id });
     
@@ -197,7 +214,6 @@ export const updateDriverProfile = async (req, res) => {
       availability
     } = req.body;
     
-    // Update fields
     Object.assign(driver, {
       experience: experience || driver.experience,
       licenseNumber: licenseNumber || driver.licenseNumber,
@@ -208,7 +224,6 @@ export const updateDriverProfile = async (req, res) => {
       availability: availability || driver.availability
     });
     
-    // Update documents if provided
     if (req.files) {
       if (req.files.licenseImage) {
         driver.documents.licenseImage = req.files.licenseImage[0].path;
@@ -238,8 +253,7 @@ export const updateDriverProfile = async (req, res) => {
   }
 };
 
-// Toggle driver availability
-export const toggleAvailability = async (req, res) => {
+const toggleAvailability = async (req, res) => {
   try {
     const driver = await Driver.findOne({ user: req.user._id });
     
@@ -268,11 +282,73 @@ export const toggleAvailability = async (req, res) => {
   }
 };
 
-export default {
+const deleteDriver = async (req, res) => {
+  try {
+    const driver = await Driver.findByIdAndDelete(req.params.id);
+    
+    if (!driver) {
+      return res.status(404).json({
+        success: false,
+        message: 'Driver not found'
+      });
+    }
+
+    await User.findByIdAndUpdate(driver.user, { role: 'user' });
+
+    res.json({
+      success: true,
+      message: 'Driver deleted successfully'
+    });
+  } catch (error) {
+    console.error('Delete driver error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error deleting driver',
+      error: error.message
+    });
+  }
+};
+
+const updateDriverAvailability = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { isAvailable } = req.body;
+
+    const driver = await Driver.findById(id);
+    
+    if (!driver) {
+      return res.status(404).json({
+        success: false,
+        message: 'Driver not found'
+      });
+    }
+
+    driver.isAvailable = isAvailable;
+    await driver.save();
+
+    res.json({
+      success: true,
+      message: `Driver availability updated to ${isAvailable ? 'available' : 'unavailable'}`,
+      driver
+    });
+  } catch (error) {
+    console.error('Update driver availability error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating driver availability',
+      error: error.message
+    });
+  }
+};
+
+export {
   searchDrivers,
+  getDriverBookings,
   registerDriver,
-  getAllDrivers,
+  getAllDrivers, 
   getDriverById,
   updateDriverProfile,
-  toggleAvailability
+  toggleAvailability,
+  updateDriverAvailability,
+  deleteDriver
 };
