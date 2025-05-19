@@ -1,12 +1,95 @@
-# React + Vite
+# 🚙 Car Drivers Admin Panel
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+![React](https://img.shields.io/badge/React-18.x-61DAFB?logo=react)
+![Vite](https://img.shields.io/badge/Vite-4.x-646CFF?logo=vite)
 
-Currently, two official plugins are available:
+A powerful administration dashboard for managing the Car Drivers platform, including drivers, users, bookings, and system settings.
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react/README.md) uses [Babel](https://babeljs.io/) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🌟 Features
 
-## Expanding the ESLint configuration
+- **Comprehensive Dashboard**: Overview of key metrics and activities
+- **Driver Management**: Add, edit, verify, and manage driver profiles
+- **User Management**: Manage user accounts and permissions
+- **Booking Administration**: Track and manage all bookings in the system
+- **Reports & Analytics**: Generate insights on platform performance
+- **Settings & Configuration**: Customize platform settings
 
-If you are developing a production application, we recommend using TypeScript and enable type-aware lint rules. Check out the [TS template](https://github.com/vitejs/vite/tree/main/packages/create-vite/template-react-ts) to integrate TypeScript and [`typescript-eslint`](https://typescript-eslint.io) in your project.
+## 🚀 Getting Started
+
+### Prerequisites
+- Node.js (v18+)
+- npm or yarn
+
+### Installation
+
+1. Install dependencies:
+```bash
+npm install
+# or
+yarn install
+```
+
+2. Start the development server:
+```bash
+npm run dev
+# or
+yarn dev
+```
+
+3. Build for production:
+```bash
+npm run build
+# or
+yarn build
+```
+
+## 📁 Project Structure
+
+```
+admin/Car-driver/
+├── src/
+│   ├── assets/           # Static assets like images
+│   ├── components/       # Reusable UI components
+│   │   ├── common/       # Common UI components
+│   │   ├── dashboard/    # Dashboard-specific components
+│   │   └── layout/       # Layout components
+│   ├── contexts/         # React context providers
+│   ├── hooks/            # Custom React hooks
+│   ├── pages/            # Application pages
+│   │   ├── auth/         # Authentication pages
+│   │   ├── bookings/     # Booking management
+│   │   ├── dashboard/    # Dashboard pages
+│   │   ├── drivers/      # Driver management
+│   │   ├── profile/      # Admin profile
+│   │   ├── reports/      # Reports and analytics
+│   │   ├── settings/     # System settings
+│   │   └── users/        # User management
+│   ├── services/         # API service functions
+│   ├── utils/            # Utility functions
+│   ├── App.jsx           # Main application component
+│   └── main.jsx          # Application entry point
+├── public/               # Public static files
+└── index.html            # HTML entry point
+```
+
+## 🔐 Authentication
+
+The admin panel uses JWT authentication with role-based access control. Only authorized administrators can access the dashboard.
+
+## 📊 Dashboard Features
+
+- **Real-time Statistics**: Track drivers, users, and bookings
+- **Recent Activities**: Monitor recent platform activities
+- **Performance Metrics**: View key performance indicators
+- **Quick Actions**: Perform common administrative tasks
+
+## 📚 Available Scripts
+
+- `npm run dev`: Start development server
+- `npm run build`: Build for production
+- `npm run lint`: Lint the codebase
+- `npm run preview`: Preview production build locally
+
+## 🔗 API Integration
+
+The admin panel connects to the backend API for all data operations. Ensure the API endpoint is correctly configured in `src/services/api.js`.
