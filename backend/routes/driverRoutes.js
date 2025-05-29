@@ -1,3 +1,4 @@
+// backend/routes/driverRoutes.js
 import express from 'express';
 import { 
   registerDriver, 
@@ -8,7 +9,9 @@ import {
   searchDrivers,
   getDriverBookings,
   updateDriverAvailability,
-  deleteDriver
+  deleteDriver,
+  getRatings,
+  addRating
 } from '../controllers/driverController.js';
 import { protect, driver, admin } from '../middleware/auth.js';
 import upload from '../utils/fileUpload.js';
@@ -22,10 +25,14 @@ const driverUpload = upload.fields([
   { name: 'additionalDocs', maxCount: 5 }
 ]);
 
-// Public routes - accessible without authentication
-router.get('/search', searchDrivers);
+// Public routes
 router.get('/', getAllDrivers);
+router.get('/search', searchDrivers);
 router.get('/:id', getDriverById);
+router.get('/:id/ratings', getRatings);
+
+// Protected user routes - requires authentication
+router.post('/:id/ratings', protect, addRating);
 
 // Protected driver routes - requires authentication and driver role
 router.post('/register', protect, driverUpload, registerDriver);
@@ -35,11 +42,11 @@ router.get('/my/bookings', protect, driver, getDriverBookings);
 router.put('/:id/availability', protect, driver, updateDriverAvailability);
 
 // Admin routes - requires authentication and admin role
-router.get('/admin/all', protect, admin, getAllDrivers);
+router.get('/admin/drivers', protect, admin, getAllDrivers);
 router.delete('/:id', protect, admin, deleteDriver);
 router.put('/admin/:id', protect, admin, driverUpload, updateDriverProfile);
 
-// Filter and sort routes
+// Additional filtering/sorting routes
 router.get('/filter/available', getAllDrivers);
 router.get('/sort/rating', getAllDrivers);
 router.get('/sort/experience', getAllDrivers);
@@ -53,73 +60,80 @@ router.get('/sort/experience', getAllDrivers);
 
 /**
  * @swagger
+ * components:
+ *   schemas:
+ *     Driver:
+ *       type: object
+ *       properties:
+ *         _id:
+ *           type: string
+ *         user:
+ *           type: string
+ *           description: Reference to User model
+ *         rating:
+ *           type: number
+ *         vehicleTypes:
+ *           type: array
+ *           items:
+ *             type: string
+ *         hourlyRate:
+ *           type: number
+ *         isAvailable:
+ *           type: boolean
+ */
+
+/**
+ * @swagger
  * /api/drivers:
  *   get:
  *     summary: Get all drivers
  *     tags: [Drivers]
  *     parameters:
- *       - in: query
- *         name: vehicleType
+ *       - name: vehicleType
+ *         in: query
  *         schema:
  *           type: string
- *         description: Filter by vehicle type
- *       - in: query
- *         name: available
+ *       - name: available
+ *         in: query
  *         schema:
  *           type: boolean
- *         description: Filter by availability
- *     responses:
- *       200:
- *         description: List of drivers
- *       500:
- *         description: Server error
- */
-
-/**
- * @swagger
- * /api/drivers/{id}:
- *   get:
- *     summary: Get driver by ID
- *     tags: [Drivers]
- *     parameters:
- *       - in: path
- *         name: id
- *         required: true
+ *       - name: minRating
+ *         in: query
  *         schema:
- *           type: string
- *     responses:
- *       200:
- *         description: Driver details
- *       404:
- *         description: Driver not found
+ *           type: number
+ *       - name: maxPrice
+ *         in: query
+ *         schema:
+ *           type: number
  */
 
 /**
  * @swagger
- * /api/drivers/register:
+ * /api/drivers/{id}/ratings:
  *   post:
- *     summary: Register as a driver
+ *     summary: Add rating for a driver
  *     tags: [Drivers]
  *     security:
  *       - bearerAuth: []
+ *     parameters:
+ *       - name: id
+ *         in: path
+ *         required: true
+ *         schema:
+ *           type: string
  *     requestBody:
  *       required: true
  *       content:
- *         multipart/form-data:
+ *         application/json:
  *           schema:
  *             type: object
  *             properties:
- *               licenseImage:
+ *               rating:
+ *                 type: number
+ *                 minimum: 1
+ *                 maximum: 5
+ *               comment:
  *                 type: string
- *                 format: binary
- *               profilePhoto:
- *                 type: string
- *                 format: binary
- *     responses:
- *       201:
- *         description: Driver registered successfully
- *       400:
- *         description: Invalid input
  */
 
 export default router;

@@ -2,22 +2,38 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { FaStar, FaCar, FaLanguage, FaShieldAlt } from 'react-icons/fa';
+import PropTypes from 'prop-types';
+
+const defaultPilotImage = "https://ui-avatars.com/api/?name=Default+Pilot&background=random";
 
 const PilotCard = ({ pilot }) => {
+  const imageUrl = pilot.profilePhoto || defaultPilotImage;
+
+  const handleImageError = (e) => {
+    e.target.src = defaultPilotImage;
+    e.target.onerror = null;
+  };
+
+
   return (
-    <div className="bg-white rounded-xl shadow-lg overflow-hidden hover:shadow-2xl transition-all duration-300 group">
-      <div className="relative">
+    <div className="bg-white rounded-lg shadow-md overflow-hidden group hover:shadow-lg transition-shadow">
+      <div className="relative aspect-w-16 aspect-h-9">
         <img
-          src={pilot.profilePhoto}
+          src={imageUrl}
           alt={pilot.name}
-          className="w-full h-48 object-cover transition duration-300 group-hover:scale-105"
+          className="w-full h-full object-cover"
+          onError={handleImageError}
         />
+        
+        {/* Rating Badge */}
         <div className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm px-3 py-1.5 rounded-full shadow">
           <div className="flex items-center">
             <FaStar className="text-yellow-400 mr-1.5" />
-            <span className="font-semibold">{pilot.rating}</span>
+            <span className="font-semibold">{pilot.rating || '4.5'}</span>
           </div>
         </div>
+
+        {/* Availability Badge */}
         {pilot.isAvailable && (
           <div className="absolute bottom-4 left-4">
             <span className="bg-green-500 text-white text-sm px-3 py-1 rounded-full flex items-center">
@@ -29,23 +45,37 @@ const PilotCard = ({ pilot }) => {
       </div>
 
       <div className="p-6">
+        {/* Pilot Name */}
         <h3 className="text-xl font-semibold mb-2 group-hover:text-primary transition-colors">
           {pilot.name}
         </h3>
+
+        {/* Pilot Details */}
         <div className="space-y-3 mb-4">
+          {/* Experience */}
           <p className="text-gray-600 flex items-center">
             <span className="mr-2 text-green-500">✓</span>
             <span className="font-medium">{pilot.experience}</span> years experience
           </p>
-          <p className="text-gray-600 flex items-center">
-            <FaCar className="mr-2 text-primary" />
-            <span>{pilot.vehicleTypes.join(', ')}</span>
-          </p>
-          <p className="text-gray-600 flex items-center">
-            <FaLanguage className="mr-2 text-primary" />
-            <span>{pilot.languages.join(', ')}</span>
-          </p>
-          {pilot.certifications && (
+
+          {/* Vehicle Types */}
+          {pilot.vehicleTypes?.length > 0 && (
+            <p className="text-gray-600 flex items-center">
+              <FaCar className="mr-2 text-primary" />
+              <span>{pilot.vehicleTypes.join(', ')}</span>
+            </p>
+          )}
+
+          {/* Languages */}
+          {pilot.languages?.length > 0 && (
+            <p className="text-gray-600 flex items-center">
+              <FaLanguage className="mr-2 text-primary" />
+              <span>{pilot.languages.join(', ')}</span>
+            </p>
+          )}
+
+          {/* Certifications */}
+          {pilot.certifications?.length > 0 && (
             <div className="flex items-center text-gray-600">
               <FaShieldAlt className="mr-2 text-primary" />
               <span className="text-sm">
@@ -60,13 +90,17 @@ const PilotCard = ({ pilot }) => {
           )}
         </div>
 
+        {/* Footer */}
         <div className="flex items-center justify-between pt-4 border-t">
+          {/* Hourly Rate */}
           <div>
             <span className="text-2xl font-bold text-primary">
               ${pilot.hourlyRate}
             </span>
             <span className="text-sm text-gray-500">/hr</span>
           </div>
+
+          {/* View Profile Link */}
           <Link
             to={`/pilot/${pilot._id}`}
             className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg transition-colors flex items-center group-hover:translate-x-1 duration-300"
@@ -90,6 +124,21 @@ const PilotCard = ({ pilot }) => {
       </div>
     </div>
   );
+};
+
+PilotCard.propTypes = {
+  pilot: PropTypes.shape({
+    _id: PropTypes.string.isRequired,
+    name: PropTypes.string.isRequired,
+    profilePhoto: PropTypes.string,
+    rating: PropTypes.number,
+    isAvailable: PropTypes.bool,
+    experience: PropTypes.number,
+    vehicleTypes: PropTypes.arrayOf(PropTypes.string),
+    languages: PropTypes.arrayOf(PropTypes.string),
+    certifications: PropTypes.arrayOf(PropTypes.string),
+    hourlyRate: PropTypes.number.isRequired
+  }).isRequired
 };
 
 export default PilotCard;

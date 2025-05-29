@@ -1,4 +1,3 @@
-// frontend/src/services/driverService.js
 import axios from 'axios';
 import pilot1Photo from '../assets/images/pilots/pilot1.jpg';
 import pilot2Photo from '../assets/images/pilots/pilot2.jpg';
@@ -6,6 +5,7 @@ import pilot3Photo from '../assets/images/pilots/pilot3.jpg';
 import pilot4Photo from '../assets/images/pilots/pilot4.jpg';
 import pilot5Photo from '../assets/images/pilots/pilot5.jpg';
 
+// Default pilots data for fallback
 const defaultPilots = [
   {
     _id: 'p1',
@@ -17,9 +17,7 @@ const defaultPilots = [
     isAvailable: true,
     vehicleTypes: ['Sedan', 'Luxury'],
     languages: ['English', 'Spanish'],
-    documents: {
-      profilePhoto: pilot1Photo
-    },
+    documents: { profilePhoto: pilot1Photo },
     certifications: ['Advanced Driving', 'Defensive Driving'],
     locations: ['New York', 'New Jersey'],
     contactInfo: {
@@ -27,68 +25,46 @@ const defaultPilots = [
       email: 'john.mitchell@gopilot.com'
     }
   },
-  {
-    _id: 'p2',
-    name: 'Sarah Williams',
-    rating: 4.8,
-    experience: 6,
-    profilePhoto: pilot2Photo,
-    hourlyRate: 40,
-    isAvailable: true,
-    vehicleTypes: ['SUV', 'Van'],
-    languages: ['English', 'French'],
-    documents: {
-      profilePhoto: pilot2Photo
-    },
-    certifications: ['Passenger Safety', 'First Aid'],
-    locations: ['Boston', 'Cambridge']
-  },
-  {
-    _id: 'p3',
-    name: 'Michael Chen',
-    rating: 4.7,
-    experience: 5,
-    profilePhoto: pilot3Photo,
-    hourlyRate: 38,
-    isAvailable: true,
-    vehicleTypes: ['Sedan', 'SUV'],
-    languages: ['English', 'Mandarin'],
-    documents: {
-      profilePhoto: pilot3Photo
-    },
-    certifications: ['Urban Navigation', 'Customer Service'],
-    locations: ['San Francisco', 'San Jose']
-  }
+  // Add more default pilots as needed
 ];
 
 const defaultPhotos = [pilot1Photo, pilot2Photo, pilot3Photo, pilot4Photo, pilot5Photo];
 
-const getRandomPhoto = () => {
-  const randomIndex = Math.floor(Math.random() * defaultPhotos.length);
-  return defaultPhotos[randomIndex];
-};
+const getRandomPhoto = () => defaultPhotos[Math.floor(Math.random() * defaultPhotos.length)];
 
-// Create axios instance with CORS config
+// Create axios instance with enhanced config
 const api = axios.create({
   baseURL: import.meta.env.VITE_API_URL || 'http://localhost:4000/api',
   headers: {
     'Content-Type': 'application/json',
   },
   withCredentials: true,
-  validateStatus: function (status) {
-    return status >= 200 && status < 300;
-  }
+  timeout: 10000, // 10 second timeout
+  validateStatus: status => status >= 200 && status < 300
 });
 
-// Add request interceptor for error handling
+// Request interceptor
 api.interceptors.request.use(
   config => {
-    // Add CORS headers to every request
-    config.headers['Access-Control-Allow-Origin'] = 'http://localhost:3001';
-    config.headers['Access-Control-Allow-Credentials'] = true;
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
     return config;
   },
   error => Promise.reject(error)
+);
+
+// Response interceptor
+api.interceptors.response.use(
+  response => response,
+  error => {
+    if (error.response?.status === 401) {
+      localStorage.removeItem('token');
+      window.location.href = '/login';
+    }
+    return Promise.reject(error);
+  }
 );
 
 const driverService = {
@@ -96,58 +72,36 @@ const driverService = {
     try {
       const response = await api.get('/drivers', { 
         params: filters,
-        timeout: 5000 // Add timeout
+        timeout: 5000
       });
       
       if (!response.data?.drivers) {
         return defaultPilots;
       }
 
-      const apiDrivers = response.data.drivers.map(driver => ({
+      return response.data.drivers.map(driver => ({
         ...driver,
         profilePhoto: driver.documents?.profilePhoto || driver.profilePhoto || getRandomPhoto(),
         name: driver.user?.name || driver.name || 'Unknown Driver'
       }));
-
-      // Apply filters
-      let filteredDrivers = [...apiDrivers];
-      
-      if (filters.vehicleType) {
-        filteredDrivers = filteredDrivers.filter(driver => 
-          driver.vehicleTypes?.some(type => 
-            type.toLowerCase() === filters.vehicleType.toLowerCase()
-          )
-        );
-      }
-      
-      if (filters.availability) {
-        filteredDrivers = filteredDrivers.filter(driver => driver.isAvailable);
-      }
-      
-      return filteredDrivers;
     } catch (error) {
       console.error('Error fetching drivers:', error);
-      return defaultPilots; // Fallback to default pilots on error
+      return defaultPilots;
     }
   },
 
   getDriverById: async (id) => {
     try {
-      if (!id) {
-        throw new Error('Driver ID is required');
-      }
+      if (!id) throw new Error('Driver ID is required');
 
-      // Check default pilots first
       const defaultPilot = defaultPilots.find(pilot => pilot._id === id);
       if (defaultPilot) return defaultPilot;
 
       const response = await api.get(`/drivers/${id}`);
+      const driver = response.data?.driver;
       
-      if (!response.data?.driver) {
-        throw new Error('Driver not found');
-      }
+      if (!driver) throw new Error('Driver not found');
 
-      const driver = response.data.driver;
       return {
         ...driver,
         profilePhoto: driver.documents?.profilePhoto || driver.profilePhoto || getRandomPhoto(),
@@ -159,25 +113,16 @@ const driverService = {
     }
   },
 
-  createBooking: async (bookingData) => {
+  searchDrivers: async (searchParams = {}) => {
     try {
-      if (!bookingData.driverId) {
-        throw new Error('Driver ID is required for booking');
-      }
-      const response = await api.post('/bookings', bookingData);
-      return response.data;
-    } catch (error) {
-      console.error('Error creating booking:', error);
-      throw error;
-    }
-  },
+      const response = await api.get('/drivers/search', { 
+        params: searchParams,
+        timeout: 5000
+      });
 
-  searchDrivers: async (searchParams) => {
-    try {
-      const response = await api.get('/drivers/search', { params: searchParams });
-      const apiDrivers = response.data?.drivers || [];
+      const drivers = response.data?.drivers || [];
       
-      return apiDrivers.map(driver => ({
+      return drivers.map(driver => ({
         ...driver,
         profilePhoto: driver.documents?.profilePhoto || driver.profilePhoto || getRandomPhoto(),
         name: driver.user?.name || driver.name || 'Unknown Driver'
@@ -188,15 +133,63 @@ const driverService = {
     }
   },
 
+  createBooking: async (bookingData) => {
+    try {
+      if (!bookingData?.driverId) {
+        throw new Error('Driver ID is required for booking');
+      }
+  
+      const response = await api.post('/bookings', {
+        ...bookingData,
+        // Make sure these required fields are included
+        driver: bookingData.driverId,
+        startTime: new Date(bookingData.startTime).toISOString(),
+        endTime: new Date(bookingData.endTime).toISOString(),
+        pickupLocation: bookingData.pickupLocation,
+        dropoffLocation: bookingData.dropoffLocation || bookingData.pickupLocation,
+        totalAmount: bookingData.totalAmount
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error creating booking:', error);
+      throw error;
+    }
+  },
+
   updateDriverProfile: async (driverId, profileData) => {
     try {
-      if (!driverId) {
-        throw new Error('Driver ID is required');
-      }
+      if (!driverId) throw new Error('Driver ID is required');
+      
       const response = await api.put(`/drivers/${driverId}`, profileData);
       return response.data;
     } catch (error) {
       console.error('Error updating driver profile:', error);
+      throw error;
+    }
+  },
+
+  getRatings: async (driverId) => {
+    try {
+      if (!driverId) throw new Error('Driver ID is required');
+      
+      const response = await api.get(`/drivers/${driverId}/ratings`);
+      return response.data?.ratings || [];
+    } catch (error) {
+      console.error('Error fetching driver ratings:', error);
+      return [];
+    }
+  },
+
+  updateAvailability: async (driverId, isAvailable) => {
+    try {
+      if (!driverId) throw new Error('Driver ID is required');
+      
+      const response = await api.patch(`/drivers/${driverId}/availability`, {
+        isAvailable
+      });
+      return response.data;
+    } catch (error) {
+      console.error('Error updating driver availability:', error);
       throw error;
     }
   }

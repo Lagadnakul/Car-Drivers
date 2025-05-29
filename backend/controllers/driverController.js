@@ -2,7 +2,7 @@ import Driver from '../models/Driver.js';
 import User from '../models/User.js';
 import Booking from '../models/Booking.js';
 
-const searchDrivers = async (req, res) => {
+export const searchDrivers = async (req, res) => {
   try {
     const { pickupLocation, dropoffLocation, date, time, vehicleType } = req.query;
     
@@ -43,7 +43,7 @@ const searchDrivers = async (req, res) => {
   }
 };
 
-const getDriverBookings = async (req, res) => {
+export const getDriverBookings = async (req, res) => {
   try {
     const driver = await Driver.findOne({ user: req.user._id });
     
@@ -73,7 +73,7 @@ const getDriverBookings = async (req, res) => {
   }
 };
 
-const registerDriver = async (req, res) => {
+export const registerDriver = async (req, res) => {
   try {
     const {
       experience,
@@ -81,7 +81,8 @@ const registerDriver = async (req, res) => {
       licenseExpiry,
       vehicleTypes,
       hourlyRate,
-      availability
+      availability,
+      vehicle
     } = req.body;
 
     const existingDriver = await Driver.findOne({ user: req.user._id });
@@ -101,12 +102,14 @@ const registerDriver = async (req, res) => {
       hourlyRate,
       isAvailable: true,
       rating: 0,
+      ratings: [],
       completedTrips: 0,
       documents: {
-        licenseImage: req.files?.licenseImage ? req.files.licenseImage[0].path : '',
-        profilePhoto: req.files?.profilePhoto ? req.files.profilePhoto[0].path : '',
-        additionalDocs: req.files?.additionalDocs ? req.files.additionalDocs.map(file => file.path) : []
+        licenseImage: req.files?.licenseImage?.[0]?.path || '',
+        profilePhoto: req.files?.profilePhoto?.[0]?.path || '',
+        additionalDocs: req.files?.additionalDocs?.map(file => file.path) || []
       },
+      vehicle,
       availability
     });
 
@@ -127,7 +130,7 @@ const registerDriver = async (req, res) => {
   }
 };
 
-const getAllDrivers = async (req, res) => {
+export const getAllDrivers = async (req, res) => {
   try {
     const { vehicleType, available, minRating, maxPrice, sort = '-rating' } = req.query;
     
@@ -169,10 +172,11 @@ const getAllDrivers = async (req, res) => {
   }
 };
 
-const getDriverById = async (req, res) => {
+export const getDriverById = async (req, res) => {
   try {
     const driver = await Driver.findById(req.params.id)
       .populate('user', 'name email phone')
+      .populate('ratings.user', 'name')
       .select('-__v');
     
     if (!driver) {
@@ -193,67 +197,47 @@ const getDriverById = async (req, res) => {
   }
 };
 
-const updateDriverProfile = async (req, res) => {
+export const updateDriverProfile = async (req, res) => {
   try {
-    const driver = await Driver.findOne({ user: req.user._id });
+    const updates = { ...req.body };
     
+    if (req.files) {
+      updates.documents = {
+        ...(req.files.licenseImage && { licenseImage: req.files.licenseImage[0].path }),
+        ...(req.files.profilePhoto && { profilePhoto: req.files.profilePhoto[0].path }),
+        ...(req.files.additionalDocs && { additionalDocs: req.files.additionalDocs.map(file => file.path) })
+      };
+    }
+
+    const driver = await Driver.findByIdAndUpdate(
+      req.params.id,
+      { $set: updates },
+      { new: true, runValidators: true }
+    );
+
     if (!driver) {
       return res.status(404).json({
         success: false,
-        message: 'Driver profile not found'
+        message: 'Driver not found'
       });
     }
-    
-    const {
-      experience,
-      licenseNumber,
-      licenseExpiry,
-      vehicleTypes,
-      hourlyRate,
-      isAvailable,
-      availability
-    } = req.body;
-    
-    Object.assign(driver, {
-      experience: experience || driver.experience,
-      licenseNumber: licenseNumber || driver.licenseNumber,
-      licenseExpiry: licenseExpiry || driver.licenseExpiry,
-      vehicleTypes: vehicleTypes || driver.vehicleTypes,
-      hourlyRate: hourlyRate || driver.hourlyRate,
-      isAvailable: isAvailable !== undefined ? isAvailable : driver.isAvailable,
-      availability: availability || driver.availability
-    });
-    
-    if (req.files) {
-      if (req.files.licenseImage) {
-        driver.documents.licenseImage = req.files.licenseImage[0].path;
-      }
-      if (req.files.profilePhoto) {
-        driver.documents.profilePhoto = req.files.profilePhoto[0].path;
-      }
-      if (req.files.additionalDocs) {
-        driver.documents.additionalDocs = req.files.additionalDocs.map(file => file.path);
-      }
-    }
-    
-    const updatedDriver = await driver.save();
-    
+
     res.json({
       success: true,
-      message: 'Profile updated successfully',
-      driver: updatedDriver
+      message: 'Driver profile updated successfully',
+      driver
     });
   } catch (error) {
     console.error('Update driver error:', error);
     res.status(500).json({
       success: false,
-      message: 'Error updating driver',
+      message: 'Error updating driver profile',
       error: error.message
     });
   }
 };
 
-const toggleAvailability = async (req, res) => {
+export const toggleAvailability = async (req, res) => {
   try {
     const driver = await Driver.findOne({ user: req.user._id });
     
@@ -263,13 +247,13 @@ const toggleAvailability = async (req, res) => {
         message: 'Driver profile not found'
       });
     }
-    
+
     driver.isAvailable = !driver.isAvailable;
     await driver.save();
-    
+
     res.json({
       success: true,
-      message: `Driver is now ${driver.isAvailable ? 'available' : 'unavailable'}`,
+      message: `Availability ${driver.isAvailable ? 'enabled' : 'disabled'} successfully`,
       isAvailable: driver.isAvailable
     });
   } catch (error) {
@@ -282,9 +266,40 @@ const toggleAvailability = async (req, res) => {
   }
 };
 
-const deleteDriver = async (req, res) => {
+export const updateDriverAvailability = async (req, res) => {
   try {
-    const driver = await Driver.findByIdAndDelete(req.params.id);
+    const { isAvailable } = req.body;
+    const driverId = req.params.id;
+
+    const driver = await Driver.findById(driverId);
+    if (!driver) {
+      return res.status(404).json({
+        success: false,
+        message: 'Driver not found'
+      });
+    }
+
+    driver.isAvailable = isAvailable;
+    await driver.save();
+
+    res.json({
+      success: true,
+      message: `Availability ${isAvailable ? 'enabled' : 'disabled'} successfully`,
+      isAvailable: driver.isAvailable
+    });
+  } catch (error) {
+    console.error('Update availability error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error updating availability',
+      error: error.message
+    });
+  }
+};
+
+export const deleteDriver = async (req, res) => {
+  try {
+    const driver = await Driver.findById(req.params.id);
     
     if (!driver) {
       return res.status(404).json({
@@ -293,6 +308,7 @@ const deleteDriver = async (req, res) => {
       });
     }
 
+    await driver.remove();
     await User.findByIdAndUpdate(driver.user, { role: 'user' });
 
     res.json({
@@ -309,13 +325,12 @@ const deleteDriver = async (req, res) => {
   }
 };
 
-const updateDriverAvailability = async (req, res) => {
+export const getRatings = async (req, res) => {
   try {
-    const { id } = req.params;
-    const { isAvailable } = req.body;
+    const driver = await Driver.findById(req.params.id)
+      .populate('ratings.user', 'name')
+      .select('ratings');
 
-    const driver = await Driver.findById(id);
-    
     if (!driver) {
       return res.status(404).json({
         success: false,
@@ -323,32 +338,69 @@ const updateDriverAvailability = async (req, res) => {
       });
     }
 
-    driver.isAvailable = isAvailable;
-    await driver.save();
-
     res.json({
       success: true,
-      message: `Driver availability updated to ${isAvailable ? 'available' : 'unavailable'}`,
-      driver
+      ratings: driver.ratings
     });
   } catch (error) {
-    console.error('Update driver availability error:', error);
+    console.error('Get ratings error:', error);
     res.status(500).json({
       success: false,
-      message: 'Error updating driver availability',
+      message: 'Error fetching ratings',
       error: error.message
     });
   }
 };
 
-export {
-  searchDrivers,
-  getDriverBookings,
-  registerDriver,
-  getAllDrivers, 
-  getDriverById,
-  updateDriverProfile,
-  toggleAvailability,
-  updateDriverAvailability,
-  deleteDriver
+export const addRating = async (req, res) => {
+  try {
+    const { rating, comment } = req.body;
+    const driverId = req.params.id;
+    const userId = req.user._id;
+
+    if (!rating || rating < 1 || rating > 5) {
+      return res.status(400).json({
+        success: false,
+        message: 'Rating must be between 1 and 5'
+      });
+    }
+
+    const driver = await Driver.findById(driverId);
+    if (!driver) {
+      return res.status(404).json({
+        success: false,
+        message: 'Driver not found'
+      });
+    }
+
+    const newRating = {
+      user: userId,
+      rating,
+      comment,
+      date: new Date()
+    };
+
+    driver.ratings.push(newRating);
+
+    // Update average rating
+    const totalRatings = driver.ratings.length;
+    const ratingSum = driver.ratings.reduce((sum, r) => sum + r.rating, 0);
+    driver.rating = (ratingSum / totalRatings).toFixed(1);
+
+    await driver.save();
+
+    res.status(201).json({
+      success: true,
+      message: 'Rating added successfully',
+      rating: newRating,
+      newAverageRating: driver.rating
+    });
+  } catch (error) {
+    console.error('Error adding rating:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Error adding rating',
+      error: error.message
+    });
+  }
 };

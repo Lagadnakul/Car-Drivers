@@ -13,6 +13,8 @@ import SearchResults from './pages/SearchResults';
 import BookingSuccess from './pages/BookingSuccess';
 import Dashboard from './pages/Dashboard';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import { ToastContainer } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 
 function App() {
   return (
@@ -54,13 +56,23 @@ function App() {
               <Route path="/pilots/search" element={<SearchResults />} />
               <Route path="/pilots/available" element={<SearchResults />} />
               <Route path="/pilots/:location" element={<SearchResults />} />
-            </Routes>
+              </Routes>
           </main>
-          <EnhancedFooter />
+          <ToastContainer
+            position="top-right"
+            autoClose={5000}
+            hideProgressBar={false}
+            newestOnTop={false}
+            closeOnClick
+            rtl={false}
+            pauseOnFocusLoss
+            draggable
+            pauseOnHover
+            theme="light"
+          />
         </div>
       </Router>
     </AuthProvider>
   );
 }
-
 export default App;
