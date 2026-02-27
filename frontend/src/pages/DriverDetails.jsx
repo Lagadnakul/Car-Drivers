@@ -1,16 +1,19 @@
-import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { useNavigate, useParams } from 'react-router-dom';
 //eslint-disable-next-line
-import { motion, AnimatePresence } from 'framer-motion';
-import { 
-  FaStar, FaCar, FaClock, FaLanguage, 
-  FaTimes, FaCalendarAlt, FaMapMarkerAlt, 
-  FaCreditCard 
+import { AnimatePresence, motion } from 'framer-motion';
+import {
+    FaCalendarAlt,
+    FaCar, FaClock,
+    FaCreditCard,
+    FaLanguage,
+    FaMapMarkerAlt,
+    FaStar,
+    FaTimes
 } from 'react-icons/fa';
-import { useAuth } from '../hooks/useAuth';
-import api from '../services/api';
-import driverService from '../services/driverService';
 import { toast } from 'react-toastify';
+import { useAuth } from '../hooks/useAuth';
+import driverService from '../services/driverService';
 
 const DriverDetails = () => {
   const { id } = useParams();
@@ -23,6 +26,7 @@ const DriverDetails = () => {
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
   
   // Booking form states
+
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [duration, setDuration] = useState(1);
@@ -46,52 +50,75 @@ const DriverDetails = () => {
     fetchDriverDetails();
   }, [id]);
 
-  const calculateEndTime = () => {
-    if (!selectedDate || !selectedTime) return null;
-    const startDateTime = new Date(`${selectedDate}T${selectedTime}`);
-    return new Date(startDateTime.getTime() + duration * 60 * 60 * 1000);
-  };
-
   const calculateTotalAmount = () => {
     return driver?.hourlyRate ? driver.hourlyRate * duration : 0;
   };
 
   const handleBookingSubmit = async (e) => {
     e.preventDefault();
+    setError(null);
     
     try {
       if (!user) {
         toast.error('Please login first');
-        navigate('/login');
+        navigate('/login', { state: { from: location.pathname } });
         return;
       }
-
+  
+      if (!selectedDate || !selectedTime || !pickupLocation) {
+        toast.error('Please fill in all required fields');
+        return;
+      }
+  
+      setLoading(true);
+  
+      // Create booking data with proper date formatting
+      const startDateTime = new Date(`${selectedDate}T${selectedTime}`);
+      const endDateTime = new Date(startDateTime);
+      endDateTime.setHours(endDateTime.getHours() + duration); 
+  
       const bookingData = {
         driverId: driver._id,
-        startTime: `${selectedDate}T${selectedTime}`,
-        endTime: calculateEndTime().toISOString(),
+        startTime: startDateTime.toISOString(),
+        endTime: endDateTime.toISOString(),
         pickupLocation,
-        dropoffLocation: dropoffLocation || pickupLocation,
+        dropLocation: dropoffLocation || pickupLocation,
         totalAmount: calculateTotalAmount()
       };
-
-      const response = await api.bookings.create(bookingData);
-
-      if (response.data.success) {
-        toast.success('Booking successful!');
+  
+      console.log('Submitting booking:', bookingData); // Debug log
+  
+      const response = await driverService.createBooking(bookingData);
+  
+      if (response.success) {
+        toast.success('Booking confirmed successfully!');
         setBookingModalOpen(false);
         navigate('/booking/success', { 
           state: { 
-            booking: response.data.booking 
+            booking: response.booking,
+            driver 
           }
         });
       }
     } catch (err) {
-      toast.error(err.response?.data?.message || 'Booking failed');
+      const errorMessage = err.message || 'Failed to create booking';
+      setError(errorMessage);
+      
+      // Handle specific error cases
+      if (errorMessage.includes('Authentication required') || errorMessage.includes('Session expired')) {
+        toast.error(errorMessage);
+        navigate('/login', { state: { from: location.pathname } });
+      } else if (errorMessage.includes('Cannot connect to server')) {
+        toast.error('Server connection failed. Please try again later.');
+      } else {
+        toast.error(errorMessage);
+      }
+      
       console.error('Booking error:', err);
+    } finally {
+      setLoading(false);
     }
   };
-
   const BookingModal = () => (
     <AnimatePresence>
       <motion.div 
@@ -107,111 +134,139 @@ const DriverDetails = () => {
           exit={{ scale: 0.9, opacity: 0 }}
         >
           <button 
+            type="button"
             onClick={() => setBookingModalOpen(false)}
             className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
           >
             <FaTimes className="w-6 h-6" />
           </button>
-
+  
           <form onSubmit={handleBookingSubmit} className="space-y-4">
             <h3 className="text-xl font-semibold mb-4">Book {driver.name}</h3>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                <FaCalendarAlt className="inline mr-2" />
-                Date
-              </label>
-              <input 
-                type="date"
-                min={new Date().toISOString().split('T')[0]}
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                <FaClock className="inline mr-2" />
-                Time
-              </label>
-              <input 
-                type="time"
-                value={selectedTime}
-                onChange={(e) => setSelectedTime(e.target.value)}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                <FaClock className="inline mr-2" />
-                Duration (hours)
-              </label>
-              <input 
-                type="number"
-                min="1"
-                max="12"
-                value={duration}
-                onChange={(e) => setDuration(parseInt(e.target.value))}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                required
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                <FaMapMarkerAlt className="inline mr-2" />
-                Pickup Location
-              </label>
-              <input 
-                type="text"
-                value={pickupLocation}
-                onChange={(e) => setPickupLocation(e.target.value)}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                required
-                placeholder="Enter pickup address"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700">
-                <FaMapMarkerAlt className="inline mr-2" />
-                Dropoff Location (optional)
-              </label>
-              <input 
-                type="text"
-                value={dropoffLocation}
-                onChange={(e) => setDropoffLocation(e.target.value)}
-                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                placeholder="Enter dropoff address (if different)"
-              />
-            </div>
-
-            <div className="bg-gray-50 p-4 rounded-lg mt-4">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-gray-600">Rate per hour:</span>
-                <span className="font-semibold">${driver.hourlyRate}</span>
+  
+            <div className="space-y-4">
+              {error && (
+                <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
+                  <p className="text-red-700">{error}</p>
+                </div>
+              )}
+  
+              {/* Date Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  <FaCalendarAlt className="inline mr-2" />
+                  Date
+                </label>
+                <input 
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  min={new Date().toISOString().split('T')[0]}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                  required
+                />
               </div>
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-gray-600">Duration:</span>
-                <span className="font-semibold">{duration} hours</span>
+  
+              {/* Time Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  <FaClock className="inline mr-2" />
+                  Time
+                </label>
+                <input 
+                  type="time"
+                  value={selectedTime}
+                  onChange={(e) => setSelectedTime(e.target.value)}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                  required
+                />
               </div>
-              <div className="flex justify-between items-center text-lg font-bold">
-                <span>Total:</span>
-                <span className="text-primary">${calculateTotalAmount()}</span>
+  
+              {/* Duration Selection */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  <FaClock className="inline mr-2" />
+                  Duration (hours)
+                </label>
+                <select
+                  value={duration}
+                  onChange={(e) => setDuration(Number(e.target.value))}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                  required
+                >
+                  {[1, 2, 3, 4, 5, 6, 7, 8].map(hours => (
+                    <option key={hours} value={hours}>{hours} hour{hours > 1 ? 's' : ''}</option>
+                  ))}
+                </select>
               </div>
+  
+              {/* Pickup Location */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  <FaMapMarkerAlt className="inline mr-2" />
+                  Pickup Location
+                </label>
+                <input 
+                  type="text"
+                  value={pickupLocation}
+                  onChange={(e) => setPickupLocation(e.target.value)}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                  required
+                  placeholder="Enter pickup address"
+                />
+              </div>
+  
+              {/* Dropoff Location */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700">
+                  <FaMapMarkerAlt className="inline mr-2" />
+                  Dropoff Location (optional)
+                </label>
+                <input 
+                  type="text"
+                  value={dropoffLocation}
+                  onChange={(e) => setDropoffLocation(e.target.value)}
+                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                  placeholder="Enter dropoff address (if different)"
+                />
+              </div>
+  
+              {/* Total Amount */}
+              <div className="bg-gray-50 p-4 rounded-lg">
+                <div className="flex justify-between items-center">
+                  <div>
+                    <p className="text-sm text-gray-600">Duration:</p>
+                    <p className="font-medium">{duration} hour{duration > 1 ? 's' : ''}</p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm text-gray-600">Total Amount:</p>
+                    <p className="text-xl font-bold text-primary">${calculateTotalAmount()}</p>
+                  </div>
+                </div>
+              </div>
+  
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-primary text-white p-3 rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
+              >
+                {loading ? (
+                  <>
+                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    Processing...
+                  </>
+                ) : (
+                  <>
+                    <FaCreditCard className="mr-2" />
+                    Confirm Booking
+                  </>
+                )}
+              </button>
             </div>
-
-            <button
-              type="submit"
-              className="w-full bg-primary text-white p-3 rounded-md hover:bg-primary/90 flex items-center justify-center"
-            >
-              <FaCreditCard className="mr-2" />
-              Confirm Booking
-            </button>
           </form>
         </motion.div>
       </motion.div>

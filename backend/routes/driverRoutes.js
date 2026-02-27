@@ -1,139 +1,62 @@
-// backend/routes/driverRoutes.js
 import express from 'express';
-import { 
-  registerDriver, 
-  getAllDrivers, 
-  getDriverById, 
-  updateDriverProfile, 
-  toggleAvailability,
-  searchDrivers,
-  getDriverBookings,
-  updateDriverAvailability,
-  deleteDriver,
-  getRatings,
-  addRating
+import {
+    deleteDriver,
+    getAllDrivers,
+    getAvailableDrivers,
+    getDriver,
+    getDriverBookings,
+    getDriverEarnings,
+    getDriverRatings,
+    getDriverStats,
+    getNearbyDrivers,
+    registerDriver,
+    searchDrivers,
+    toggleDriverAvailability,
+    updateDriver,
+    updateDriverLocation,
+    updateDriverStatus,
+    updateDriverVehicle,
+    uploadDriverDocuments,
+    verifyDriverDocuments
 } from '../controllers/driverController.js';
-import { protect, driver, admin } from '../middleware/auth.js';
+import { protect } from '../middleware/auth.js';
 import upload from '../utils/fileUpload.js';
 
 const router = express.Router();
 
-// Configure multer upload for driver documents
-const driverUpload = upload.fields([
-  { name: 'licenseImage', maxCount: 1 },
-  { name: 'profilePhoto', maxCount: 1 },
-  { name: 'additionalDocs', maxCount: 5 }
-]);
-
 // Public routes
 router.get('/', getAllDrivers);
 router.get('/search', searchDrivers);
-router.get('/:id', getDriverById);
-router.get('/:id/ratings', getRatings);
+router.get('/nearby', getNearbyDrivers);
+router.get('/available', getAvailableDrivers);
+router.get('/:id', getDriver);
 
-// Protected user routes - requires authentication
-router.post('/:id/ratings', protect, addRating);
+// Protected routes - driver registration
+router.post('/register', protect, upload.fields([
+  { name: 'profilePhoto', maxCount: 1 },
+  { name: 'vehiclePhoto', maxCount: 1 }
+]), registerDriver);
 
-// Protected driver routes - requires authentication and driver role
-router.post('/register', protect, driverUpload, registerDriver);
-router.put('/profile', protect, driver, driverUpload, updateDriverProfile);
-router.put('/toggle-availability', protect, driver, toggleAvailability);
-router.get('/my/bookings', protect, driver, getDriverBookings);
-router.put('/:id/availability', protect, driver, updateDriverAvailability);
+// Protected routes - driver management
+router.put('/:id', protect, updateDriver);
+router.delete('/:id', protect, deleteDriver);
+router.patch('/:id/location', protect, updateDriverLocation);
+router.patch('/:id/status', protect, updateDriverStatus);
+router.patch('/:id/availability', protect, toggleDriverAvailability);
+router.put('/:id/vehicle', protect, updateDriverVehicle);
 
-// Admin routes - requires authentication and admin role
-router.get('/admin/drivers', protect, admin, getAllDrivers);
-router.delete('/:id', protect, admin, deleteDriver);
-router.put('/admin/:id', protect, admin, driverUpload, updateDriverProfile);
+// Protected routes - driver data
+router.get('/:id/bookings', protect, getDriverBookings);
+router.get('/:id/earnings', protect, getDriverEarnings);
+router.get('/:id/ratings', protect, getDriverRatings);
+router.get('/:id/stats', protect, getDriverStats);
 
-// Additional filtering/sorting routes
-router.get('/filter/available', getAllDrivers);
-router.get('/sort/rating', getAllDrivers);
-router.get('/sort/experience', getAllDrivers);
-
-/**
- * @swagger
- * tags:
- *   name: Drivers
- *   description: Driver management endpoints
- */
-
-/**
- * @swagger
- * components:
- *   schemas:
- *     Driver:
- *       type: object
- *       properties:
- *         _id:
- *           type: string
- *         user:
- *           type: string
- *           description: Reference to User model
- *         rating:
- *           type: number
- *         vehicleTypes:
- *           type: array
- *           items:
- *             type: string
- *         hourlyRate:
- *           type: number
- *         isAvailable:
- *           type: boolean
- */
-
-/**
- * @swagger
- * /api/drivers:
- *   get:
- *     summary: Get all drivers
- *     tags: [Drivers]
- *     parameters:
- *       - name: vehicleType
- *         in: query
- *         schema:
- *           type: string
- *       - name: available
- *         in: query
- *         schema:
- *           type: boolean
- *       - name: minRating
- *         in: query
- *         schema:
- *           type: number
- *       - name: maxPrice
- *         in: query
- *         schema:
- *           type: number
- */
-
-/**
- * @swagger
- * /api/drivers/{id}/ratings:
- *   post:
- *     summary: Add rating for a driver
- *     tags: [Drivers]
- *     security:
- *       - bearerAuth: []
- *     parameters:
- *       - name: id
- *         in: path
- *         required: true
- *         schema:
- *           type: string
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             properties:
- *               rating:
- *                 type: number
- *                 minimum: 1
- *                 maximum: 5
- *               comment:
- *                 type: string
- */
+// Protected routes - document management
+router.post('/:id/documents', protect, upload.fields([
+  { name: 'license', maxCount: 1 },
+  { name: 'insurance', maxCount: 1 },
+  { name: 'registration', maxCount: 1 }
+]), uploadDriverDocuments);
+router.patch('/:id/documents/verify', protect, verifyDriverDocuments);
 
 export default router;

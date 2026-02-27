@@ -1,55 +1,63 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { AuthProvider } from './contexts/AuthContext';
-import { DataProvider } from './contexts/DataContext';
-import Layout from './components/layout/Layout';
-import Login from './pages/auth/Login';
-import Dashboard from './pages/dashboard/Dashboard';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import EnhancedNavbar from './components/layout/EnhancedNavbar';
+import EnhancedFooter from './components/layout/EnhancedFooter';
+import Home from './pages/Home';
+import Drivers from './pages/Drivers';
+import DriverDetails from './pages/DriverDetails';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import About from './pages/About';
+import Contact from './pages/Contact';
+import { AuthProvider } from './context/AuthContext';
+import SearchResults from './pages/SearchResults';
+import BookingSuccess from './pages/BookingSuccess';
+import Dashboard from './pages/Dashboard';
+import ProtectedRoute from './components/auth/ProtectedRoute';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-
-// Protected Route Component
-const ProtectedRoute = ({ children }) => {
-  const token = localStorage.getItem('adminToken');
-  if (!token) {
-    return <Navigate to="/login" replace />;
-  }
-  return children;
-};
 
 function App() {
   return (
     <AuthProvider>
-      <DataProvider>
-        <Router>
-          <Routes>
-            {/* Public Routes */}
-            <Route path="/login" element={<Login />} />
-            
-            {/* Protected Admin Routes */}
-            <Route
-              path="/"
-              element={
-                <ProtectedRoute>
-                  <Layout />
-                </ProtectedRoute>
-              }
-            >
-              <Route index element={<Dashboard />} />
-              <Route path="dashboard" element={<Dashboard />} />
-              
-              {/* Placeholder routes - will show dashboard for now */}
-              <Route path="drivers" element={<Dashboard />} />
-              <Route path="users" element={<Dashboard />} />
-              <Route path="bookings" element={<Dashboard />} />
-              <Route path="reports" element={<Dashboard />} />
-              <Route path="settings" element={<Dashboard />} />
-              <Route path="profile" element={<Dashboard />} />
-            </Route>
+      <Router>
+        <div className="min-h-screen flex flex-col">
+          <EnhancedNavbar />
+          <main className="flex-grow pt-16">
+            <Routes>
+              {/* Public Routes */}
+              <Route path="/" element={<Home />} />
+              <Route path="/pilots" element={<Drivers />} />
+              <Route path="/pilot/:id" element={<DriverDetails />} />
+              <Route path="/search-pilots" element={<SearchResults />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/about" element={<About />} />
+              <Route path="/contact" element={<Contact />} />
 
-            {/* Catch all - redirect to dashboard */}
-            <Route path="*" element={<Navigate to="/" replace />} />
-          </Routes>
-          
+              {/* Protected Routes */}
+              <Route 
+                path="/booking/success" 
+                element={
+                  <ProtectedRoute>
+                    <BookingSuccess />
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/dashboard" 
+                element={
+                  <ProtectedRoute>
+                    <Dashboard />
+                  </ProtectedRoute>
+                } 
+              />
+              
+              {/* Pilot Search Routes */}
+              <Route path="/pilots/search" element={<SearchResults />} />
+              <Route path="/pilots/available" element={<SearchResults />} />
+              <Route path="/pilots/:location" element={<SearchResults />} />
+            </Routes>
+          </main>
           <ToastContainer
             position="top-right"
             autoClose={5000}
@@ -62,10 +70,11 @@ function App() {
             pauseOnHover
             theme="light"
           />
-        </Router>
-      </DataProvider>
+          <EnhancedFooter />
+        </div>
+      </Router>
     </AuthProvider>
   );
 }
 
-export default App;
+export default App; // Add this line to properly export the component

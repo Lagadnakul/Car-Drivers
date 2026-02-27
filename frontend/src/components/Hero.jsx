@@ -1,5 +1,4 @@
 // src/components/Hero.jsx
-import React from 'react';
 import { Link } from 'react-router-dom';
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
@@ -46,8 +45,8 @@ const Hero = () => {
               <div className="absolute -top-10 -left-10 w-60 h-60 bg-primary/20 rounded-full blur-3xl"></div>
               <div className="absolute -bottom-16 -right-16 w-48 h-48 bg-blue-500/10 rounded-full blur-2xl"></div>
               <img 
-                src="https://ik.imagekit.io/bxi3adntf/Car-Driver/Photos/Home%202.png?updatedAt=1744652487811" 
-                alt="Luxury car service"
+                src="https://images.unsplash.com/photo-1544620347-c4fd4a3d5957?ixlib=rb-4.0.3&auto=format&fit=crop&w=600&q=80" 
+                alt="Luxury car with professional driver service"
                 className="relative z-10 w-full h-auto object-contain rounded-xl shadow-2xl"
               />
             </div>

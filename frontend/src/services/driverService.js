@@ -1,9 +1,9 @@
-import axios from 'axios';
 import pilot1Photo from '../assets/images/pilots/pilot1.jpg';
 import pilot2Photo from '../assets/images/pilots/pilot2.jpg';
 import pilot3Photo from '../assets/images/pilots/pilot3.jpg';
 import pilot4Photo from '../assets/images/pilots/pilot4.jpg';
 import pilot5Photo from '../assets/images/pilots/pilot5.jpg';
+import api from './api.js';
 
 // Default pilots data for fallback
 const defaultPilots = [
@@ -24,48 +24,12 @@ const defaultPilots = [
       phone: '+1 (555) 123-4567',
       email: 'john.mitchell@gopilot.com'
     }
-  },
-  // Add more default pilots as needed
+  }
 ];
 
 const defaultPhotos = [pilot1Photo, pilot2Photo, pilot3Photo, pilot4Photo, pilot5Photo];
 
 const getRandomPhoto = () => defaultPhotos[Math.floor(Math.random() * defaultPhotos.length)];
-
-// Create axios instance with enhanced config
-const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:4000/api',
-  headers: {
-    'Content-Type': 'application/json',
-  },
-  withCredentials: true,
-  timeout: 10000, // 10 second timeout
-  validateStatus: status => status >= 200 && status < 300
-});
-
-// Request interceptor
-api.interceptors.request.use(
-  config => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      config.headers.Authorization = `Bearer ${token}`;
-    }
-    return config;
-  },
-  error => Promise.reject(error)
-);
-
-// Response interceptor
-api.interceptors.response.use(
-  response => response,
-  error => {
-    if (error.response?.status === 401) {
-      localStorage.removeItem('token');
-      window.location.href = '/login';
-    }
-    return Promise.reject(error);
-  }
-);
 
 const driverService = {
   getAllDrivers: async (filters = {}) => {
@@ -136,23 +100,54 @@ const driverService = {
   createBooking: async (bookingData) => {
     try {
       if (!bookingData?.driverId) {
-        throw new Error('Driver ID is required for booking');
+        throw new Error('Driver ID is required');
+      }
+
+      // Check if user is authenticated
+      const token = localStorage.getItem('token');
+      if (!token) {
+        throw new Error('Authentication required. Please login first.');
       }
   
-      const response = await api.post('/bookings', {
-        ...bookingData,
-        // Make sure these required fields are included
-        driver: bookingData.driverId,
+      const formattedBooking = {
+        driverId: bookingData.driverId,
         startTime: new Date(bookingData.startTime).toISOString(),
         endTime: new Date(bookingData.endTime).toISOString(),
         pickupLocation: bookingData.pickupLocation,
-        dropoffLocation: bookingData.dropoffLocation || bookingData.pickupLocation,
-        totalAmount: bookingData.totalAmount
-      });
+        dropLocation: bookingData.dropLocation || bookingData.pickupLocation,
+        totalAmount: parseFloat(bookingData.totalAmount) || 0
+      };
+
+      console.log('Sending booking request to:', api.defaults.baseURL + '/bookings');
+      console.log('Booking data:', formattedBooking);
+      console.log('Auth token exists:', !!token);
+  
+      const response = await api.post('/bookings', formattedBooking);
+  
+      if (!response.data?.success) {
+        throw new Error(response.data?.message || 'Booking creation failed');
+      }
+  
       return response.data;
     } catch (error) {
-      console.error('Error creating booking:', error);
-      throw error;
+      console.error('Booking error details:', error);
+      
+      if (error.code === 'ECONNREFUSED') {
+        throw new Error('Cannot connect to server. Please ensure the backend is running on port 4000.');
+      }
+      
+      if (error.response?.status === 401) {
+        localStorage.removeItem('token');
+        localStorage.removeItem('user');
+        throw new Error('Session expired. Please login again.');
+      }
+      
+      if (error.response?.status === 404) {
+        throw new Error('Booking service not found. Please contact support.');
+      }
+      
+      const errorMessage = error.response?.data?.message || error.message || 'Unable to create booking';
+      throw new Error(errorMessage);
     }
   },
 
@@ -191,6 +186,31 @@ const driverService = {
     } catch (error) {
       console.error('Error updating driver availability:', error);
       throw error;
+    }
+  },
+
+  registerDriver: async (driverData) => {
+    try {
+      const response = await api.post('/drivers/register', driverData);
+      return response.data;
+    } catch (error) {
+      console.error('Error registering driver:', error);
+      throw error;
+    }
+  },
+
+  getAvailableDrivers: async () => {
+    try {
+      const response = await api.get('/drivers/available', { timeout: 5000 });
+      const drivers = response.data?.data || [];
+      return drivers.map(driver => ({
+        ...driver,
+        profilePhoto: driver.documents?.profilePhoto || driver.profilePhoto || getRandomPhoto(),
+        name: driver.user?.name || driver.name || 'Unknown Driver'
+      }));
+    } catch (error) {
+      console.error('Error fetching available drivers:', error);
+      return defaultPilots;
     }
   }
 };

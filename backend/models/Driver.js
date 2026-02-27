@@ -1,120 +1,71 @@
 import mongoose from 'mongoose';
 
-// Rating schema for driver reviews
-const ratingSchema = new mongoose.Schema({
-  user: {
-    type: mongoose.Schema.Types.ObjectId,
-    ref: 'User',
-    required: true
-  },
-  rating: {
-    type: Number,
-    required: true,
-    min: 1,
-    max: 5
-  },
-  comment: String,
-  date: {
-    type: Date,
-    default: Date.now
-  }
-});
-
-// Main driver schema
 const driverSchema = new mongoose.Schema({
   user: {
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User',
     required: true
   },
-  name: String,
-  profilePhoto: {
-    type: String,
-    default: '/assets/images/drivers/default.jpg'
-  },
-  rating: {
-    type: Number,
-    default: 4.5,
-    min: 0,
-    max: 5
-  },
-  ratings: [ratingSchema],
-  vehicleTypes: [String],
-  languages: [String],
-  certifications: [String],
-  hourlyRate: {
-    type: Number,
-    required: [true, 'Hourly rate is required'],
-    min: 0
-  },
-  isAvailable: {
-    type: Boolean,
-    default: true
-  },
-  experience: {
-    type: Number,
-    required: [true, 'Experience is required'],
-    min: 0
-  },
   licenseNumber: {
     type: String,
     required: [true, 'License number is required'],
     unique: true
   },
-  licenseExpiry: {
-    type: Date,
-    required: [true, 'License expiry date is required']
+  experience: {
+    type: Number,
+    required: [true, 'Experience is required']
   },
+  vehicleTypes: [{
+    type: String,
+    required: [true, 'Vehicle type is required']
+  }],
+  isAvailable: {
+    type: Boolean,
+    default: true
+  },
+  rating: {
+    type: Number,
+    default: 0,
+    min: 0,
+    max: 5
+  },
+  totalRatings: {
+    type: Number,
+    default: 0
+  },
+  totalTrips: {
+    type: Number,
+    default: 0
+  },
+  hourlyRate: {
+    type: Number,
+    required: [true, 'Hourly rate is required'],
+    min: 0
+  },
+  languages: [{
+    type: String
+  }],
+  certifications: [{
+    type: String
+  }],
   documents: {
-    licenseImage: String,
-    profilePhoto: String,
-    additionalDocs: [String]
-  },
-  vehicle: {
-    type: {
+    profilePhoto: {
       type: String,
-      required: [true, 'Vehicle type is required']
+      default: 'default-profile.jpg'
     },
-    make: {
+    vehiclePhoto: {
       type: String,
-      required: [true, 'Vehicle make is required']
+      default: 'default-vehicle.jpg'
     },
-    model: {
+    license: {
       type: String,
-      required: [true, 'Vehicle model is required']
+      required: [true, 'License document is required']
     },
-    year: {
-      type: Number,
-      required: [true, 'Vehicle year is required']
-    },
-    licensePlate: {
-      type: String,
-      required: [true, 'License plate is required'],
-      unique: true
-    },
-    photo: {
-      type: String,
-      default: '/assets/images/vehicles/sedan.jpg'
+    insurance: {
+      type: String
     }
   },
-  completedTrips: {
-    type: Number,
-    default: 0
-  },
-  totalEarnings: {
-    type: Number,
-    default: 0
-  },
-  availabilitySchedule: [{
-    startTime: Date,
-    endTime: Date
-  }],
-  status: {
-    type: String,
-    enum: ['active', 'inactive', 'suspended'],
-    default: 'active'
-  },
-  location: {
+  currentLocation: {
     type: {
       type: String,
       enum: ['Point'],
@@ -124,51 +75,99 @@ const driverSchema = new mongoose.Schema({
       type: [Number],
       default: [0, 0]
     }
+  },
+  preferredLocations: [{
+    type: String
+  }],
+  workingHours: {
+    start: {
+      type: String,
+      default: '09:00'
+    },
+    end: {
+      type: String,
+      default: '18:00'
+    }
+  },
+  status: {
+    type: String,
+    enum: ['pending', 'active', 'suspended', 'inactive'],
+    default: 'pending'
+  },
+  earnings: {
+    total: {
+      type: Number,
+      default: 0
+    },
+    withdrawn: {
+      type: Number,
+      default: 0
+    },
+    pending: {
+      type: Number,
+      default: 0
+    }
+  },
+  bankDetails: {
+    accountHolder: String,
+    accountNumber: String,
+    bankName: String,
+    ifscCode: String
   }
-}, {
+}, { 
   timestamps: true,
   toJSON: { virtuals: true },
   toObject: { virtuals: true }
 });
 
 // Indexes
-driverSchema.index({ location: '2dsphere' });
-driverSchema.index({ vehicleTypes: 1 });
-driverSchema.index({ isAvailable: 1 });
-driverSchema.index({ rating: -1 });
+driverSchema.index({ currentLocation: '2dsphere' });
+driverSchema.index({ 'user': 1 });
+driverSchema.index({ 'licenseNumber': 1 });
+driverSchema.index({ 'isAvailable': 1 });
+driverSchema.index({ 'status': 1 });
 
-// Virtual for driver's full name
-driverSchema.virtual('fullName').get(function() {
-  return this.name || (this.user && this.user.name) || 'Unknown Driver';
+// Virtual for reviews
+driverSchema.virtual('reviews', {
+  ref: 'Review',
+  localField: '_id',
+  foreignField: 'driver'
 });
 
-// Calculate average rating before saving
-driverSchema.pre('save', function(next) {
-  if (this.ratings && this.ratings.length > 0) {
-    const totalRatings = this.ratings.reduce((sum, r) => sum + r.rating, 0);
-    this.rating = (totalRatings / this.ratings.length).toFixed(1);
+// Virtual for bookings
+driverSchema.virtual('bookings', {
+  ref: 'Booking',
+  localField: '_id',
+  foreignField: 'driver'
+});
+
+// Method to calculate average rating
+driverSchema.methods.calculateAverageRating = function() {
+  if (this.totalRatings === 0) return 0;
+  return this.rating / this.totalRatings;
+};
+
+// Update rating method
+driverSchema.methods.updateRating = async function(newRating) {
+  this.rating = (this.rating * this.totalRatings + newRating) / (this.totalRatings + 1);
+  this.totalRatings += 1;
+  await this.save();
+};
+
+// Pre-save middleware to handle data validation
+driverSchema.pre('save', async function(next) {
+  // Ensure hourly rate is positive
+  if (this.hourlyRate < 0) {
+    throw new Error('Hourly rate cannot be negative');
   }
+
+  // Ensure coordinates are valid
+  if (this.currentLocation.coordinates.length !== 2) {
+    throw new Error('Invalid coordinates');
+  }
+
   next();
 });
 
-// Method to check if driver is available at specific time
-driverSchema.methods.isAvailableAt = function(datetime) {
-  if (!this.isAvailable) return false;
-  
-  if (!this.availabilitySchedule || this.availabilitySchedule.length === 0) {
-    return true;
-  }
-
-  return !this.availabilitySchedule.some(schedule => 
-    datetime >= schedule.startTime && datetime <= schedule.endTime
-  );
-};
-
-// Method to update driver's earnings
-driverSchema.methods.updateEarnings = function(amount) {
-  this.totalEarnings += amount;
-  this.completedTrips += 1;
-  return this.save();
-};
-
-export default mongoose.model('Driver', driverSchema);
+const Driver = mongoose.model('Driver', driverSchema);
+export default Driver;

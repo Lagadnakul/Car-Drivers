@@ -3,7 +3,6 @@ import { FaEnvelope, FaFacebook, FaGoogle, FaLock, FaPhone, FaUser } from 'react
 import { Link, useNavigate } from 'react-router-dom';
 import { toast } from 'react-toastify';
 import { useAuth } from '../hooks/useAuth';
-import api from '../services/api';
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -19,28 +18,37 @@ const Register = () => {
   const navigate = useNavigate();
 
   const validateForm = () => {
-    if (!formData.fullName || !formData.email || !formData.password || !formData.confirmPassword) {
-      setError('Please fill in all required fields');
+    // Update password regex to require at least 8 characters
+    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  
+    if (!formData.fullName.trim()) {
+      setError('Full name is required');
       return false;
     }
-
-    if (formData.password.length < 6) {
-      setError('Password must be at least 6 characters long');
+  
+    if (!emailRegex.test(formData.email)) {
+      setError('Please enter a valid email address');
       return false;
     }
-
+  
+    if (!passwordRegex.test(formData.password)) {
+      setError('Password must be at least 8 characters long and contain both letters and numbers');
+      return false;
+    }
+  
     if (formData.password !== formData.confirmPassword) {
       setError('Passwords do not match');
       return false;
     }
-
+  
     return true;
   };
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
+    setFormData(prevState => ({
+      ...prevState,
       [name]: value
     }));
     // Clear error when user starts typing
@@ -65,25 +73,18 @@ const Register = () => {
         password: formData.password
       };
 
-      const response = await api.auth.register(userData);
-      
-      if (response.data.success) {
-        toast.success('Registration successful! Please log in.');
-        navigate('/login');
-      }
+      await register(userData);
+      toast.success('Registration successful! Please log in.');
+      navigate('/login');
     } catch (err) {
-      const errorMessage = err.response?.data?.message || 'Registration failed. Please try again.';
-      setError(errorMessage);
-      toast.error(errorMessage);
-      console.error('Registration error:', err);
+      setError(err.response?.data?.message || 'Registration failed');
+      toast.error(err.response?.data?.message || 'Registration failed');
     } finally {
       setIsLoading(false);
     }
   };
 
   const handleSocialRegistration = (provider) => {
-    // In a real app, this would integrate with OAuth providers
-    console.log(`Register with ${provider}`);
     toast.info(`${provider} registration will be available soon`);
   };
 
@@ -104,9 +105,7 @@ const Register = () => {
           <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
             <div className="flex">
               <div className="flex-shrink-0">
-                <svg className="h-5 w-5 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                  <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-                </svg>
+                <FaUser className="h-5 w-5 text-red-500" />
               </div>
               <div className="ml-3">
                 <p className="text-sm text-red-700">{error}</p>
@@ -133,6 +132,7 @@ const Register = () => {
                 onChange={handleChange}
               />
             </div>
+            
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <FaEnvelope className="h-5 w-5 text-gray-400" />
@@ -149,6 +149,7 @@ const Register = () => {
                 onChange={handleChange}
               />
             </div>
+
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <FaPhone className="h-5 w-5 text-gray-400" />
@@ -164,6 +165,7 @@ const Register = () => {
                 onChange={handleChange}
               />
             </div>
+
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <FaLock className="h-5 w-5 text-gray-400" />
@@ -180,6 +182,7 @@ const Register = () => {
                 onChange={handleChange}
               />
             </div>
+
             <div className="relative">
               <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <FaLock className="h-5 w-5 text-gray-400" />

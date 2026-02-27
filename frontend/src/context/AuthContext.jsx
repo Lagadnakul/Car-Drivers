@@ -1,84 +1,97 @@
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useEffect, useState } from 'react';
+//eslint-disable-next-line
+import { toast } from 'react-toastify';
+import { endpoints } from '../services/api';
 
 export const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
+  const [loading, setLoading] = useState(false);
+  const [authError, setAuthError] = useState(null);
 
   useEffect(() => {
-    checkAuthStatus();
+    const storedUser = localStorage.getItem('user');
+    if (storedUser) {
+      setUser(JSON.parse(storedUser));
+    }
   }, []);
 
-  const checkAuthStatus = () => {
-    const token = localStorage.getItem('token');
-    if (token) {
-      setIsAuthenticated(true);
-      try {
-        const userData = JSON.parse(localStorage.getItem('user'));
-        setUser(userData);
-      } catch (error) {
-        console.error('Error parsing user data:', error);
-        setError('Error loading user data');
-      }
-    }
-    setLoading(false);
+  const clearError = () => {
+    setAuthError(null);
   };
 
-  const login = async (email, password) => {
+  const register = async (userData) => {
     try {
       setLoading(true);
-      setError(null);
+      setAuthError(null);
+      const response = await endpoints.auth.register(userData);
       
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password })
-      });
-
-      if (!response.ok) {
-        throw new Error('Login failed');
-      }
-
-      const data = await response.json();
-      
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-      
-      setIsAuthenticated(true);
-      setUser(data.user);
-      
-      return data;
+      // Don't auto-login after registration for security
+      toast.success('Registration successful! Please log in.');
+      return response.data;
     } catch (err) {
-      setError(err.message || 'Authentication failed');
+      const message = err.response?.data?.message || 'Registration failed';
+      setAuthError(message);
+      toast.error(message);
       throw err;
     } finally {
       setLoading(false);
     }
   };
 
-  const logout = () => {
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
-    setIsAuthenticated(false);
-    setUser(null);
+  const login = async (credentials) => {
+    try {
+      setLoading(true);
+      setAuthError(null);
+      const response = await endpoints.auth.login({
+        email: credentials.email,
+        password: credentials.password
+      });
+      
+      const { user: userData, token } = response.data;
+      
+      localStorage.setItem('token', token);
+      localStorage.setItem('user', JSON.stringify(userData));
+      
+      setUser(userData);
+      toast.success('Login successful!');
+      
+      return response.data;
+    } catch (err) {
+      const message = err.response?.data?.message || 'Login failed';
+      setAuthError(message);
+      toast.error(message);
+      throw err;
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const updateUser = (userData) => {
-    setUser(userData);
-    localStorage.setItem('user', JSON.stringify(userData));
+  const logout = async () => {
+    try {
+      setAuthError(null);
+      await endpoints.auth.logout();
+      localStorage.removeItem('token');
+      localStorage.removeItem('user');
+      setUser(null);
+      toast.success('Logged out successfully');
+    } catch (err) {
+      const message = err.response?.data?.message || 'Logout failed';
+      setAuthError(message);
+      console.error('Logout error:', err);
+      toast.error(message);
+    }
   };
 
   const value = {
-    isAuthenticated,
     user,
     loading,
-    error,
+    error: authError,
+    register,
     login,
     logout,
-    updateUser
+    clearError
   };
 
   return (
@@ -86,12 +99,4 @@ export const AuthProvider = ({ children }) => {
       {children}
     </AuthContext.Provider>
   );
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
 };

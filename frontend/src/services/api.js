@@ -6,28 +6,22 @@ const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
 // Create Axios instance
 const api = axios.create({
-  baseURL: BASE_URL,
+  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:4000/api',
   headers: {
-    'Content-Type': 'application/json'
+    'Content-Type': 'application/json',
   },
   withCredentials: true,
-  timeout: 10000, // 10 second timeout
-  validateStatus: status => status >= 200 && status < 300
 });
-
 // Request interceptor
 api.interceptors.request.use(
-  (config) => {
+  config => {
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
     return config;
   },
-  (error) => {
-    console.error('Request error:', error);
-    return Promise.reject(error);
-  }
+  error => Promise.reject(error)
 );
 
 // Response interceptor
@@ -56,13 +50,13 @@ api.interceptors.response.use(
           toast.error('Server error. Please try again later');
           break;
         default:
-          toast.error(error.response.data.message || 'Something went wrong');
+          toast.error(error.response.data?.message || 'Something went wrong');
       }
     } else if (error.request) {
       // The request was made but no response was received
       toast.error('No response from server. Please check your connection');
     } else {
-      // Something happened in setting up the request that triggered an Error
+      // Something happened in setting up the request
       toast.error('Error setting up request. Please try again');
     }
 
@@ -72,25 +66,27 @@ api.interceptors.response.use(
 
 // API endpoints
 const endpoints = {
-  // Auth endpoints
   auth: {
-    login: (credentials) => api.post('/auth/login', credentials),
+    login: (credentials) => api.post('/auth/login', {
+      email: credentials.email,
+      password: credentials.password
+    }),
     register: (userData) => api.post('/auth/register', userData),
     logout: () => api.post('/auth/logout'),
-    profile: () => api.get('/auth/profile')
+    profile: () => api.get('/users/profile')
   },
 
-  // Driver endpoints
   drivers: {
     getAll: (params) => api.get('/drivers', { params }),
     getById: (id) => api.get(`/drivers/${id}`),
     create: (driverData) => api.post('/drivers', driverData),
     update: (id, driverData) => api.put(`/drivers/${id}`, driverData),
     delete: (id) => api.delete(`/drivers/${id}`),
-    toggleAvailability: (id) => api.patch(`/drivers/${id}/availability`)
+    toggleAvailability: (id) => api.patch(`/drivers/${id}/availability`),
+    search: (params) => api.get('/drivers/search', { params }),
+    getAvailable: () => api.get('/drivers/available'),
   },
 
-  // Booking endpoints
   bookings: {
     create: (bookingData) => api.post('/bookings', bookingData),
     getAll: () => api.get('/bookings'),
@@ -99,11 +95,17 @@ const endpoints = {
     cancel: (id) => api.patch(`/bookings/${id}/cancel`)
   },
 
-  // User endpoints
   users: {
     getProfile: () => api.get('/users/profile'),
     updateProfile: (userData) => api.put('/users/profile', userData),
-    getBookings: () => api.get('/users/bookings')
+    getBookings: () => api.get('/users/bookings'),
+    updatePassword: (passwordData) => api.put('/users/password', passwordData)
+  },
+
+  upload: {
+    image: (formData) => api.post('/upload/image', formData, {
+      headers: { 'Content-Type': 'multipart/form-data' }
+    })
   }
 };
 

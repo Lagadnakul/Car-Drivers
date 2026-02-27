@@ -1,13 +1,27 @@
 import express from 'express';
-import { createBooking, getUserBookings, getDriverBookings, getBookingById, updateBookingStatus } from '../controllers/bookingController.js';
-import { protect, driver } from '../middleware/auth.js';
+import {
+  cancelBooking,
+  createBooking,
+  deleteBooking,
+  getBookingById,
+  getBookings,
+  updateBooking
+} from '../controllers/bookingController.js';
+import { protect } from '../middleware/auth.js';
 
 const router = express.Router();
 
-router.post('/', protect, createBooking);
-router.get('/user', protect, getUserBookings);
-router.get('/driver', protect, driver, getDriverBookings);
-router.get('/:id', protect, getBookingById);
-router.put('/:id/status', protect, updateBookingStatus);
+router.use(protect);
+
+router.route('/')
+  .post(createBooking)
+  .get(getBookings);
+
+router.route('/:id')
+  .get(getBookingById)
+  .put(updateBooking)
+  .delete(deleteBooking);
+
+router.patch('/:id/cancel', cancelBooking);
 
 export default router;

@@ -1,13 +1,13 @@
 // frontend/src/pages/Drivers.jsx
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from 'react';
 //eslint-disable-next-line
 import { motion } from 'framer-motion';
-import driverService from '../services/driverService';
-import PilotCard from '../components/PilotCard';
+import { FaSearch } from 'react-icons/fa';
+import ErrorAlert from '../components/ErrorAlert';
 import FilterPanel from '../components/FilterPanel';
 import LoadingSpinner from '../components/LoadingSpinner';
-import ErrorAlert from '../components/ErrorAlert';
-import { FaSearch } from 'react-icons/fa';
+import PilotCard from '../components/PilotCard';
+import driverService from '../services/driverService';
 
 const Drivers = () => {
   const [drivers, setDrivers] = useState([]);
@@ -22,21 +22,21 @@ const Drivers = () => {
     availability: false
   });
 
-  // Fetch drivers on component mount
+  // Fetch available drivers on component mount
   useEffect(() => {
-    fetchDrivers();
+    fetchAvailableDrivers();
   }, []);
 
-  const fetchDrivers = async () => {
+  const fetchAvailableDrivers = async () => {
     try {
       setLoading(true);
       setError(null);
-      const driversData = await driverService.getAllDrivers();
+      const driversData = await driverService.getAvailableDrivers();
       setDrivers(driversData);
       setFilteredDrivers(driversData);
     } catch (err) {
-      console.error('Error fetching drivers:', err);
-      setError('Failed to load pilots. Please try again.');
+      console.error('Error fetching available drivers:', err);
+      setError('Failed to load available pilots. Please try again.');
     } finally {
       setLoading(false);
     }

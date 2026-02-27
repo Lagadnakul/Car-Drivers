@@ -1,36 +1,47 @@
 import mongoose from 'mongoose';
-import validator from 'validator';
+import bcrypt from 'bcrypt';
 
 const userSchema = new mongoose.Schema({
-    name: {
-        type: String,
-        required: [true, 'Please enter your name'],
-        trim: true
-    },
-    email: {
-        type: String,
-        required: [true, 'Please enter your email'],
-        unique: true,
-        validate: [validator.isEmail, 'Please enter a valid email']
-    },
-    password: {
-        type: String,
-        required: [true, 'Please enter your password'],
-        minLength: [6, 'Password should be at least 6 characters']
-    },
-    phone: {
-        type: String,
-        required: [true, 'Please enter your phone number']
-    },
-    role: {
-        type: String,
-        enum: ['user', 'driver', 'admin'],
-        default: 'user'
-    },
-    createdAt: {
-        type: Date,
-        default: Date.now
-    }
+  name: {
+    type: String,
+    required: [true, 'Name is required'],
+    trim: true
+  },
+  email: {
+    type: String,
+    required: [true, 'Email is required'],
+    unique: true,
+    lowercase: true
+  },
+  password: {
+    type: String,
+    required: [true, 'Password is required'],
+    minlength: 6,
+    select: false
+  },
+  phone: {
+    type: String,
+    required: [true, 'Phone number is required']
+  },
+  role: {
+    type: String,
+    enum: ['user', 'driver', 'admin'],
+    default: 'user'
+  },
+  createdAt: {
+    type: Date,
+    default: Date.now
+  }
+}, { timestamps: true });
+
+userSchema.pre('save', async function(next) {
+  if (!this.isModified('password')) return next();
+  this.password = await bcrypt.hash(this.password, 10);
 });
 
-export default mongoose.model('User', userSchema);
+userSchema.methods.matchPassword = async function(enteredPassword) {
+  return await bcrypt.compare(enteredPassword, this.password);
+};
+
+const User = mongoose.model('User', userSchema);
+export default User;

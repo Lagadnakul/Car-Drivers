@@ -1,20 +1,20 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import EnhancedNavbar from './components/layout/EnhancedNavbar';
-import EnhancedFooter from './components/layout/EnhancedFooter';
-import Home from './pages/Home';
-import Drivers from './pages/Drivers';
-import DriverDetails from './pages/DriverDetails';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import About from './pages/About';
-import Contact from './pages/Contact';
-import { AuthProvider } from './context/AuthContext';
-import SearchResults from './pages/SearchResults';
-import BookingSuccess from './pages/BookingSuccess';
-import Dashboard from './pages/Dashboard';
-import ProtectedRoute from './components/auth/ProtectedRoute';
+import { Route, BrowserRouter as Router, Routes } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import ProtectedRoute from './components/auth/ProtectedRoute';
+import EnhancedNavbar from './components/layout/EnhancedNavbar';
+import { AuthProvider } from './context/AuthContext';
+import About from './pages/About';
+import BookingSuccess from './pages/BookingSuccess';
+import Contact from './pages/Contact';
+import Dashboard from './pages/Dashboard';
+import DriverDetails from './pages/DriverDetails';
+import Drivers from './pages/Drivers';
+import Home from './pages/Home';
+import Login from './pages/Login';
+import Register from './pages/Register';
+import SearchResults from './pages/SearchResults';
+import Services from './pages/Services';
 
 function App() {
   return (
@@ -33,6 +33,7 @@ function App() {
               <Route path="/register" element={<Register />} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
+              <Route path="/services" element={<Services />} />
 
               {/* Protected Routes */}
               <Route 

@@ -1,129 +1,341 @@
-# 🔧 Car Drivers Backend API
+# Car Driver Backend API
 
-![Node.js](https://img.shields.io/badge/Node.js-18.x-339933?logo=node.js)
-![Express](https://img.shields.io/badge/Express-4.x-000000?logo=express)
-![MongoDB](https://img.shields.io/badge/MongoDB-5.x-47A248?logo=mongodb)
+A comprehensive Node.js backend API for a car driver booking application with admin dashboard functionality.
 
-The backend API for the Car Drivers platform, powering both the frontend client and admin dashboard.
+## Features
 
-## 🚀 Features
+### 🔐 Authentication & Authorization
+- JWT-based authentication
+- Role-based access control (User, Driver, Admin)
+- Secure password hashing with bcrypt
+- Rate limiting for authentication endpoints
 
-- **RESTful API**: Clean, consistent API design
-- **Authentication**: JWT-based user authentication system
-- **Role-Based Access**: Different permissions for users and admins
-- **Data Management**: CRUD operations for drivers, users, and bookings
-- **File Uploads**: Image upload for driver profiles and licenses
-- **ImageKit Integration**: Cloud-based image storage and delivery
-- **Input Validation**: Request validation and sanitization
+### 👥 User Management
+- User registration and login
+- Profile management with photo upload
+- Booking history and statistics
+- Password updates and validation
 
-## 🛠️ Installation
+### 🚗 Driver Management
+- Driver registration with vehicle details
+- Document upload and verification
+- Location tracking and updates
+- Earnings and performance analytics
+- Availability management
 
-### Prerequisites
-- Node.js (v18+)
-- MongoDB
-- npm or yarn
+### 📅 Booking System
+- Complete CRUD operations for bookings
+- Real-time status updates
+- Geospatial queries for nearby drivers
+- Booking conflicts prevention
+- Fare calculation
 
-### Setup
+### 🛠 Admin Panel
+- Comprehensive dashboard analytics
+- User and driver management
+- Bulk operations
+- System settings management
+- Report generation
+- Data export functionality
 
-1. Install dependencies:
-```bash
-npm install
-# or
-yarn install
-```
+## Tech Stack
 
-2. Create a `.env` file with the following variables:
-```
-PORT=5000
-MONGODB_URI=your_mongodb_connection_string
-JWT_SECRET=your_jwt_secret_key
-IMAGEKIT_PUBLIC_KEY=your_imagekit_public_key
-IMAGEKIT_PRIVATE_KEY=your_imagekit_private_key
-IMAGEKIT_URL_ENDPOINT=your_imagekit_url_endpoint
-```
+- **Runtime:** Node.js with ES6 modules
+- **Framework:** Express.js
+- **Database:** MongoDB with Mongoose ODM
+- **Authentication:** JWT (JSON Web Tokens)
+- **File Upload:** Multer
+- **Security:** bcrypt, CORS, rate limiting
+- **Validation:** Custom middleware with comprehensive checks
 
-3. Start the server:
-```bash
-# Development
-npm run dev
-
-# Production
-npm start
-```
-
-## 📁 Project Structure
+## Project Structure
 
 ```
 backend/
-├── config/             # Configuration files
-│   ├── db.js           # Database connection
-│   └── imagekit.js     # ImageKit integration
-├── controllers/        # Route controllers
+├── controllers/          # Route handlers
+│   ├── adminController.js
+│   ├── authController.js
 │   ├── bookingController.js
 │   ├── driverController.js
 │   └── userController.js
-├── middleware/         # Express middleware
-│   └── auth.js         # Authentication middleware
-├── models/             # MongoDB models
+├── middleware/           # Custom middleware
+│   ├── auth.js          # Authentication & authorization
+│   ├── error.js         # Global error handling
+│   ├── rateLimit.js     # Rate limiting
+│   └── validation.js    # Input validation
+├── models/              # Database models
 │   ├── Booking.js
 │   ├── Driver.js
 │   └── User.js
-├── routes/             # API routes
+├── routes/              # Route definitions
+│   ├── adminRoutes.js
+│   ├── authRoutes.js
 │   ├── bookingRoutes.js
 │   ├── driverRoutes.js
-│   ├── imagekit.js
 │   └── userRoutes.js
-├── uploads/            # File upload directory
-├── utils/              # Utility functions
-│   └── fileUpload.js   # File upload utilities
-├── package.json        # Project dependencies
-└── server.js           # Main entry point
+├── utils/               # Utility functions
+│   ├── fileUpload.js    # File upload configuration
+│   └── helpers.js       # Helper functions
+├── config/              # Configuration
+│   └── db.js           # Database connection
+├── assets/              # Static files
+│   └── uploads/        # Uploaded files
+├── .env.example        # Environment variables template
+├── package.json
+└── server.js           # Application entry point
 ```
 
-## 📡 API Endpoints
+## Installation
 
-### Authentication
-- `POST /api/users/register` - Register a new user
-- `POST /api/users/login` - User login
-- `GET /api/users/me` - Get current user
+1. **Clone the repository**
+   ```bash
+   git clone <repository-url>
+   cd backend
+   ```
 
-### Drivers
-- `GET /api/drivers` - Get all drivers
-- `GET /api/drivers/:id` - Get driver by ID
-- `POST /api/drivers` - Create a new driver
-- `PUT /api/drivers/:id` - Update a driver
-- `DELETE /api/drivers/:id` - Delete a driver
+2. **Install dependencies**
+   ```bash
+   npm install
+   ```
 
-### Bookings
-- `GET /api/bookings` - Get all bookings
-- `GET /api/bookings/:id` - Get booking by ID
-- `POST /api/bookings` - Create a new booking
-- `PUT /api/bookings/:id` - Update a booking
-- `DELETE /api/bookings/:id` - Delete a booking
+3. **Set up environment variables**
+   ```bash
+   cp .env.example .env
+   ```
+   
+   Edit `.env` with your configuration:
+   ```env
+   MONGODB_URI=mongodb://localhost:27017/car-driver-app
+   JWT_SECRET=your-super-secure-jwt-secret-key-here
+   JWT_EXPIRE=7d
+   PORT=4000
+   NODE_ENV=development
+   ```
 
-### ImageKit
-- `GET /api/imagekit/auth` - Get authentication parameters for ImageKit
+4. **Start the development server**
+   ```bash
+   npm run dev
+   ```
 
-## 🔒 Security
+## API Endpoints
 
-- JWT Authentication
-- Password hashing
-- Request validation
-- Protected routes
-- CORS protection
+### Authentication Routes (`/api/auth`)
+- `POST /register` - User registration
+- `POST /login` - User login
 
-## 📚 Scripts
+### User Routes (`/api/users`)
+- `GET /` - Get all users (with pagination)
+- `GET /search` - Search users
+- `GET /profile/me` - Get current user profile
+- `PUT /profile/me` - Update current user profile
+- `GET /:id` - Get user by ID
+- `PUT /:id` - Update user
+- `DELETE /:id` - Delete user (Admin only)
+- `PUT /:id/password` - Update user password
+- `PUT /:id/photo` - Update profile photo
+- `GET /:id/bookings` - Get user bookings
+- `GET /:id/stats` - Get user statistics
 
-- `npm start`: Start production server
-- `npm run dev`: Start development server with nodemon
-- `npm run seed`: Seed database with initial data (if implemented)
+### Driver Routes (`/api/drivers`)
+- `GET /` - Get all drivers
+- `GET /search` - Search drivers with filters
+- `GET /nearby` - Get nearby drivers
+- `POST /register` - Driver registration
+- `GET /:id` - Get driver by ID
+- `PUT /:id` - Update driver
+- `DELETE /:id` - Delete driver
+- `PATCH /:id/location` - Update driver location
+- `PATCH /:id/status` - Update driver status
+- `PATCH /:id/availability` - Toggle driver availability
+- `GET /:id/bookings` - Get driver bookings
+- `GET /:id/earnings` - Get driver earnings
+- `GET /:id/ratings` - Get driver ratings
+- `GET /:id/stats` - Get driver statistics
+- `POST /:id/documents` - Upload driver documents
+- `PATCH /:id/documents/verify` - Verify driver documents
 
-## 📋 Dependencies
+### Booking Routes (`/api/bookings`)
+- `GET /` - Get all bookings
+- `POST /` - Create new booking
+- `GET /:id` - Get booking by ID
+- `PUT /:id` - Update booking
+- `DELETE /:id` - Cancel booking
+- `PATCH /:id/status` - Update booking status
+- `GET /:id/tracking` - Get booking tracking info
 
-- Express
-- Mongoose
-- JsonWebToken
-- Bcrypt
-- Multer
-- ImageKit
-- Other utilities (see package.json for full list)
+### Admin Routes (`/api/admin`)
+- `GET /dashboard` - Get dashboard statistics
+- `GET /analytics` - Get detailed analytics
+- `POST /reports` - Generate reports
+- `GET /system-info` - Get system information
+- `PUT /system-settings` - Update system settings
+- `POST /users/bulk-update` - Bulk update users
+- `POST /drivers/bulk-update` - Bulk update drivers
+- `GET /users/:id/stats` - Get user statistics
+- `GET /drivers/:id/stats` - Get driver statistics
+- `POST /notifications/bulk` - Send bulk notifications
+- `POST /export` - Export data
+
+## Database Models
+
+### User Model
+```javascript
+{
+  name: String,
+  email: String (unique),
+  password: String (hashed),
+  phone: String,
+  role: ['user', 'driver', 'admin'],
+  profilePhoto: String,
+  isActive: Boolean,
+  isVerified: Boolean,
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+### Driver Model
+```javascript
+{
+  user: ObjectId (ref: User),
+  licenseNumber: String,
+  vehicleDetails: {
+    make: String,
+    model: String,
+    year: Number,
+    plateNumber: String,
+    color: String,
+    type: String
+  },
+  documents: {
+    license: String,
+    insurance: String,
+    registration: String
+  },
+  location: {
+    type: Point,
+    coordinates: [Number] // [longitude, latitude]
+  },
+  isAvailable: Boolean,
+  isVerified: Boolean,
+  rating: Number,
+  totalRides: Number,
+  totalEarnings: Number,
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+### Booking Model
+```javascript
+{
+  user: ObjectId (ref: User),
+  driver: ObjectId (ref: Driver),
+  pickupLocation: {
+    address: String,
+    coordinates: {
+      latitude: Number,
+      longitude: Number
+    }
+  },
+  dropoffLocation: {
+    address: String,
+    coordinates: {
+      latitude: Number,
+      longitude: Number
+    }
+  },
+  scheduledDateTime: Date,
+  status: ['pending', 'confirmed', 'in-progress', 'completed', 'cancelled'],
+  serviceType: ['standard', 'premium', 'luxury', 'shared'],
+  fare: Number,
+  estimatedDuration: Number,
+  actualDuration: Number,
+  rating: Number,
+  feedback: String,
+  paymentStatus: String,
+  paymentMethod: String,
+  createdAt: Date,
+  updatedAt: Date
+}
+```
+
+## Security Features
+
+- **Password Security**: Bcrypt hashing with salt rounds
+- **JWT Authentication**: Secure token-based authentication
+- **Rate Limiting**: Configurable request limits
+- **Input Validation**: Comprehensive validation middleware
+- **CORS Protection**: Cross-origin request security
+- **Error Handling**: Secure error responses without sensitive data
+
+## Middleware
+
+### Authentication (`auth.js`)
+- `protect`: Verify JWT token and authenticate user
+- `authorize`: Role-based authorization
+
+### Validation (`validation.js`)
+- `validateUserRegistration`: User registration validation
+- `validateDriverRegistration`: Driver registration validation
+- `validateBookingCreation`: Booking creation validation
+- `validateLocationUpdate`: GPS coordinates validation
+- `validatePasswordUpdate`: Password change validation
+
+### Error Handling (`error.js`)
+- Global error handler for consistent error responses
+- MongoDB error handling (CastError, ValidationError, etc.)
+
+## Utilities
+
+### Helpers (`helpers.js`)
+- Response formatting utilities
+- Pagination helpers
+- Search query builders
+- Distance calculations (Haversine formula)
+- Validation functions
+- Data sanitization
+
+### File Upload (`fileUpload.js`)
+- Multer configuration for image uploads
+- File type validation
+- Size limits and storage configuration
+
+## Development
+
+### Running in Development Mode
+```bash
+npm run dev
+```
+
+### Running in Production Mode
+```bash
+npm start
+```
+
+### Environment Variables
+See `.env.example` for all required environment variables.
+
+## Testing
+
+The API can be tested using tools like:
+- Postman
+- Insomnia
+- curl commands
+- Frontend integration
+
+## Contributing
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Add tests if applicable
+5. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License.
+
+## Support
+
+For support and questions, please contact the development team.

@@ -1,7 +1,6 @@
 // frontend/src/components/CallToAction.jsx
-import React from 'react';
+import { FaCar, FaClock, FaShieldAlt } from 'react-icons/fa';
 import { Link } from 'react-router-dom';
-import { FaCar, FaShieldAlt, FaClock } from 'react-icons/fa';
 
 const FeatureItem = ({ icon, title, description }) => {
   return (
@@ -75,10 +74,11 @@ const CallToAction = () => {
             </div>
             <div className="relative h-64 md:h-auto">
               <img 
-                src="https://ik.imagekit.io/bxi3adntf/Car-Driver/Photos/call-to-action.jpg" 
-                alt="Professional driver" 
+                src="https://images.unsplash.com/photo-1449824913935-59a10b8d2000?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+                alt="Professional driver with luxury vehicle" 
                 className="absolute inset-0 w-full h-full object-cover"
               />
+              <div className="absolute inset-0 bg-gradient-to-l from-black/30 to-transparent"></div>
             </div>
           </div>
         </div>

@@ -1,9 +1,8 @@
 // frontend/src/pages/About.jsx
-import React from 'react';
 import { Link } from 'react-router-dom';
 // eslint-disable-next-line no-unused-vars
 import { motion } from 'framer-motion';
-import { FaShieldAlt, FaUserTie, FaClock, FaTrophy, FaChevronRight, FaQuoteRight } from 'react-icons/fa';
+import { FaChevronRight, FaClock, FaQuoteRight, FaShieldAlt, FaTrophy, FaUserTie } from 'react-icons/fa';
 
 const About = () => {
   const fadeIn = {
@@ -71,8 +70,8 @@ const About = () => {
               variants={fadeIn}
             >
               <img 
-                src="https://ik.imagekit.io/bxi3adntf/Car-Driver/Photos/about-image.jpg" 
-                alt="Go Pilot Team" 
+                src="https://images.unsplash.com/photo-1556742049-0cfed4f6a45d?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+                alt="Professional Driver Team" 
                 className="rounded-2xl shadow-2xl w-full h-auto object-cover"
               />
               <div className="absolute -bottom-8 -right-8 bg-white p-4 rounded-lg shadow-lg hidden md:block">
@@ -84,6 +83,7 @@ const About = () => {
                   </div>
                 </div>
               </div>
+              <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent rounded-2xl"></div>
             </motion.div>
 
             <motion.div 
@@ -232,10 +232,11 @@ const About = () => {
               </div>
               <div className="relative h-64 md:h-auto">
                 <img 
-                  src="https://ik.imagekit.io/bxi3adntf/Car-Driver/Photos/testimonial-corporate.jpg" 
-                  alt="Corporate client testimonial" 
+                  src="https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&auto=format&fit=crop&w=800&q=80" 
+                  alt="Corporate transportation testimonial" 
                   className="absolute inset-0 w-full h-full object-cover"
                 />
+                <div className="absolute inset-0 bg-gradient-to-r from-black/40 to-transparent"></div>
               </div>
             </div>
           </motion.div>
@@ -265,19 +266,19 @@ const About = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-12">
             {[
               {
-                image: "https://ik.imagekit.io/bxi3adntf/Car-Driver/Photos/team-1.jpg",
+                image: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
                 name: "Michael Carter",
                 role: "Founder & CEO",
                 bio: "With over 15 years in the transportation industry, Michael leads our company with a passion for exceptional service."
               },
               {
-                image: "https://ik.imagekit.io/bxi3adntf/Car-Driver/Photos/team-2.jpg",
+                image: "https://images.unsplash.com/photo-1494790108755-2616b612b739?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
                 name: "Sarah Johnson",
                 role: "Chief Operations Officer",
                 bio: "Sarah ensures our day-to-day operations run smoothly and maintains our high standards of service excellence."
               },
               {
-                image: "https://ik.imagekit.io/bxi3adntf/Car-Driver/Photos/team-3.jpg",
+                image: "https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
                 name: "David Rodriguez",
                 role: "Fleet Manager",
                 bio: "David oversees our vehicle fleet, ensuring all cars meet our strict safety and luxury standards."
@@ -309,6 +310,69 @@ const About = () => {
                       {member.bio}
                     </p>
                   </div>
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Gallery Section */}
+      <section className="py-16 bg-gray-50">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <motion.div 
+            className="text-center mb-12"
+            initial="hidden"
+            whileInView="visible"
+            viewport={{ once: true }}
+            transition={{ duration: 0.6 }}
+            variants={fadeIn}
+          >
+            <div className="bg-primary/10 px-4 py-2 rounded-full w-max mx-auto mb-4">
+              <span className="text-primary font-medium">Our Services</span>
+            </div>
+            <h2 className="text-3xl font-bold text-gray-900 mb-4">Experience Excellence</h2>
+            <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+              A glimpse into our premium vehicles and professional service standards
+            </p>
+          </motion.div>
+          
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            {[
+              {
+                image: "https://images.unsplash.com/photo-1550355291-bbee04a92027?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
+                alt: "Luxury sedan fleet"
+              },
+              {
+                image: "https://images.unsplash.com/photo-1571068316344-75bc76f77890?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
+                alt: "Professional chauffeur"
+              },
+              {
+                image: "https://images.unsplash.com/photo-1449824913935-59a10b8d2000?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
+                alt: "Airport transfer service"
+              },
+              {
+                image: "https://images.unsplash.com/photo-1560472354-b33ff0c44a43?ixlib=rb-4.0.3&auto=format&fit=crop&w=400&q=80",
+                alt: "Corporate transportation"
+              }
+            ].map((item, index) => (
+              <motion.div 
+                key={index}
+                className="relative overflow-hidden rounded-lg shadow-md group"
+                initial={{ opacity: 0, scale: 0.9 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ duration: 0.5, delay: index * 0.1 }}
+                whileHover={{ y: -5 }}
+              >
+                <img 
+                  src={item.image} 
+                  alt={item.alt}
+                  className="w-full h-48 object-cover transition-transform group-hover:scale-110 duration-500"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+                <div className="absolute bottom-0 left-0 right-0 p-4 text-white transform translate-y-full group-hover:translate-y-0 transition-transform duration-300">
+                  <p className="text-sm font-medium">{item.alt}</p>
                 </div>
               </motion.div>
             ))}

@@ -1,4 +1,4 @@
-import { defineConfig, loadEnv } from 'vite';
+import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import { fileURLToPath } from 'url';
@@ -6,21 +6,8 @@ import { fileURLToPath } from 'url';
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Create a function to handle environment variables
-const getEnvVars = (mode) => {
-  const env = loadEnv(mode, process.cwd(), '');
-  return {
-    'process.env': Object.keys(env).reduce((prev, key) => {
-      prev[key] = JSON.stringify(env[key]);
-      return prev;
-    }, {})
-  };
-};
-
 export default defineConfig(({ mode }) => ({
   plugins: [react()],
-  
-  define: getEnvVars(mode),
   
   resolve: {
     alias: {
@@ -35,18 +22,14 @@ export default defineConfig(({ mode }) => ({
   },
 
   server: {
-    port: 5173,
-    open: true,
     host: true,
-    watch: {
-      usePolling: true
-    },
+    port: 5173,
     proxy: {
       '/api': {
         target: 'http://localhost:4000',
         changeOrigin: true,
         secure: false,
-        ws: true
+        rewrite: (path) => path.replace(/^\/api/, '')
       }
     }
   },
@@ -58,60 +41,14 @@ export default defineConfig(({ mode }) => ({
     minify: 'terser',
     rollupOptions: {
       output: {
-        assetFileNames: ({ name }) => {
-          const ext = path.extname(name).slice(1);
-          if (/png|jpe?g|svg|gif|tiff|bmp|ico/i.test(ext)) {
-            return 'assets/images/[name]-[hash][extname]';
-          }
-          return 'assets/[ext]/[name]-[hash][extname]';
-        },
+        assetFileNames: 'assets/[name]-[hash][extname]',
         chunkFileNames: 'assets/js/[name]-[hash].js',
-        entryFileNames: 'assets/js/[name]-[hash].js',
-        manualChunks: {
-          vendor: ['react', 'react-dom', 'react-router-dom'],
-          ui: ['react-icons', 'framer-motion'],
-          utils: ['axios', 'jwt-decode']
-        }
+        entryFileNames: 'assets/js/[name]-[hash].js'
       }
     }
   },
 
-  css: {
-    modules: {
-      localsConvention: 'camelCase',
-      generateScopedName: '[name]__[local]__[hash:base64:5]'
-    },
-    preprocessorOptions: {
-      scss: {
-        additionalData: `@import "@/assets/styles/variables.scss";`
-      }
-    },
-    devSourcemap: true
-  },
-
-  optimizeDeps: {
-    include: [
-      'react', 
-      'react-dom', 
-      'react-router-dom',
-      'axios',
-      'react-icons',
-      'framer-motion',
-      'jwt-decode'
-    ]
-  },
-
-  envPrefix: 'VITE_',
-  
-  esbuild: {
-    target: 'esnext',
-    supported: {
-      'top-level-await': true
-    }
-  },
-
-  preview: {
-    port: 5173,
-    host: true
+  define: {
+    'process.env': {}
   }
 }));
