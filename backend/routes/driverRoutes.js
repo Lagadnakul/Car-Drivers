@@ -1,3 +1,4 @@
+// d:/VS CODE/Car Driver/backend/routes/driverRoutes.js
 import express from 'express';
 import {
     deleteDriver,
@@ -19,7 +20,7 @@ import {
     uploadDriverDocuments,
     verifyDriverDocuments
 } from '../controllers/driverController.js';
-import { protect } from '../middleware/auth.js';
+import { protect } from '../middleware/authMiddleware.js';
 import upload from '../utils/fileUpload.js';
 
 const router = express.Router();

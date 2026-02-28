@@ -1,3 +1,4 @@
+// d:/VS CODE/Car Driver/backend/models/Driver.js
 import mongoose from 'mongoose';
 
 const driverSchema = new mongoose.Schema({
@@ -120,52 +121,41 @@ const driverSchema = new mongoose.Schema({
   toObject: { virtuals: true }
 });
 
-// Indexes
 driverSchema.index({ currentLocation: '2dsphere' });
 driverSchema.index({ 'user': 1 });
 driverSchema.index({ 'licenseNumber': 1 });
 driverSchema.index({ 'isAvailable': 1 });
 driverSchema.index({ 'status': 1 });
 
-// Virtual for reviews
 driverSchema.virtual('reviews', {
   ref: 'Review',
   localField: '_id',
   foreignField: 'driver'
 });
-
-// Virtual for bookings
 driverSchema.virtual('bookings', {
   ref: 'Booking',
   localField: '_id',
   foreignField: 'driver'
 });
 
-// Method to calculate average rating
 driverSchema.methods.calculateAverageRating = function() {
   if (this.totalRatings === 0) return 0;
   return this.rating / this.totalRatings;
 };
 
-// Update rating method
 driverSchema.methods.updateRating = async function(newRating) {
   this.rating = (this.rating * this.totalRatings + newRating) / (this.totalRatings + 1);
   this.totalRatings += 1;
   await this.save();
 };
 
-// Pre-save middleware to handle data validation
 driverSchema.pre('save', async function(next) {
-  // Ensure hourly rate is positive
   if (this.hourlyRate < 0) {
     throw new Error('Hourly rate cannot be negative');
   }
-
-  // Ensure coordinates are valid
   if (this.currentLocation.coordinates.length !== 2) {
     throw new Error('Invalid coordinates');
   }
-
   next();
 });
 
