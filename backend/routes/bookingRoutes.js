@@ -1,3 +1,4 @@
+// filepath: d:\VS CODE\Car Driver\backend\routes\bookingRoutes.js
 import express from 'express';
 import {
   cancelBooking,
@@ -9,10 +10,13 @@ import {
 } from '../controllers/bookingController.js';
 import { protect } from '../middleware/auth.js';
 
+// ✅ CRITICAL: Router MUST be created BEFORE use()
 const router = express.Router();
 
+// ✅ Apply authentication middleware to ALL routes
 router.use(protect);
 
+// ✅ Routes using correct syntax
 router.route('/')
   .post(createBooking)
   .get(getBookings);

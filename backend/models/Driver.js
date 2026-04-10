@@ -1,4 +1,3 @@
-// d:/VS CODE/Car Driver/backend/models/Driver.js
 import mongoose from 'mongoose';
 
 const driverSchema = new mongoose.Schema({
@@ -10,7 +9,8 @@ const driverSchema = new mongoose.Schema({
   licenseNumber: {
     type: String,
     required: [true, 'License number is required'],
-    unique: true
+    unique: true,
+    sparse: true
   },
   experience: {
     type: Number,
@@ -66,7 +66,7 @@ const driverSchema = new mongoose.Schema({
       type: String
     }
   },
-  currentLocation: {
+  location: {
     type: {
       type: String,
       enum: ['Point'],
@@ -121,7 +121,7 @@ const driverSchema = new mongoose.Schema({
   toObject: { virtuals: true }
 });
 
-driverSchema.index({ currentLocation: '2dsphere' });
+driverSchema.index({ location: '2dsphere' });
 driverSchema.index({ 'user': 1 });
 driverSchema.index({ 'licenseNumber': 1 });
 driverSchema.index({ 'isAvailable': 1 });
@@ -153,7 +153,7 @@ driverSchema.pre('save', async function(next) {
   if (this.hourlyRate < 0) {
     throw new Error('Hourly rate cannot be negative');
   }
-  if (this.currentLocation.coordinates.length !== 2) {
+  if (!this.location || !Array.isArray(this.location.coordinates) || this.location.coordinates.length !== 2) {
     throw new Error('Invalid coordinates');
   }
   next();

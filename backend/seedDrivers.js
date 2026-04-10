@@ -1,6 +1,6 @@
 // d:/VS CODE/Car Driver/backend/seedDrivers.js
-import mongoose from 'mongoose';
 import dotenv from 'dotenv';
+import mongoose from 'mongoose';
 import Driver from './models/Driver.js';
 import User from './models/User.js';
 dotenv.config();
@@ -30,7 +30,7 @@ const seed = async () => {
     languages: ['English'],
     certifications: ['Defensive Driving'],
     documents: { profilePhoto: 'default-profile.jpg', vehiclePhoto: 'default-vehicle.jpg', license: 'LICDOC' },
-    currentLocation: { type: 'Point', coordinates: [77.1 + i*0.01, 28.6 + i*0.01] },
+    location: { type: 'Point', coordinates: [77.1 + i*0.01, 28.6 + i*0.01] },
     status: 'active',
     earnings: { total: 1000 + i*100, withdrawn: 500, pending: 100 },
     bankDetails: { accountHolder: user.name, accountNumber: `ACC${i+1}000`, bankName: 'Seed Bank', ifscCode: 'IFSC0001' }

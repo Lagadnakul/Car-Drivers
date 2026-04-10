@@ -1,41 +1,59 @@
+// filepath: d:\VS CODE\Car Driver\frontend\src\services\api.js
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
-// Base URL from environment variables
-const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
+// ✅ Configure base URL
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
-// Create Axios instance
+console.log('🔗 API Base URL:', BASE_URL);
+
+// ✅ Create Axios instance
 const api = axios.create({
-  baseURL: import.meta.env.VITE_API_URL || 'http://localhost:4000/api',
+  baseURL: BASE_URL,
   headers: {
     'Content-Type': 'application/json',
   },
   withCredentials: true,
+  timeout: 10000 // 10 second timeout
 });
-// Request interceptor
+
+// ✅ REQUEST INTERCEPTOR - Add token to headers
 api.interceptors.request.use(
-  config => {
+  (config) => {
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
+      console.log('✅ Token added to request');
     }
+    console.log(`📤 API Request: ${config.method.toUpperCase()} ${config.url}`);
     return config;
   },
-  error => Promise.reject(error)
+  (error) => {
+    console.error('❌ Request error:', error);
+    return Promise.reject(error);
+  }
 );
 
-// Response interceptor
+// ✅ RESPONSE INTERCEPTOR - Handle errors
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    console.log(`✅ API Response: ${response.status} ${response.config.url}`);
+    return response;
+  },
   (error) => {
+    console.error('❌ API Error:', error);
+
     if (error.response) {
-      // The request was made and the server responded with a status code
-      // that falls out of the range of 2xx
+      // Server responded with error status
       switch (error.response.status) {
+        case 400:
+          toast.error(error.response.data?.message || 'Bad request');
+          break;
         case 401:
           localStorage.removeItem('token');
           localStorage.removeItem('user');
           window.location.href = '/login';
+          toast.error('Session expired. Please login again.');
           break;
         case 403:
           toast.error('You do not have permission to perform this action');
@@ -43,70 +61,61 @@ api.interceptors.response.use(
         case 404:
           toast.error('Resource not found');
           break;
-        case 422:
-          toast.error('Validation failed');
-          break;
         case 500:
           toast.error('Server error. Please try again later');
           break;
         default:
-          toast.error(error.response.data?.message || 'Something went wrong');
+          toast.error(error.response.data?.message || 'An error occurred');
       }
     } else if (error.request) {
-      // The request was made but no response was received
-      toast.error('No response from server. Please check your connection');
+      // Request made but no response
+      console.error('No response received:', error.request);
+      toast.error('Network error. Please check your connection.');
     } else {
-      // Something happened in setting up the request
-      toast.error('Error setting up request. Please try again');
+      // Error in request setup
+      console.error('Error:', error.message);
+      toast.error(error.message || 'An unexpected error occurred');
     }
 
     return Promise.reject(error);
   }
 );
 
-// API endpoints
-const endpoints = {
+export default api;
+
+// ✅ API ENDPOINTS OBJECT
+export const endpoints = {
+  // Auth endpoints
   auth: {
-    login: (credentials) => api.post('/auth/login', {
-      email: credentials.email,
-      password: credentials.password
-    }),
-    register: (userData) => api.post('/auth/register', userData),
+    register: (data) => api.post('/auth/register', data),
+    login: (data) => api.post('/auth/login', data),
     logout: () => api.post('/auth/logout'),
-    profile: () => api.get('/users/profile')
   },
 
+  // User endpoints
+  users: {
+    getProfile: () => api.get('/users/profile/me'),
+    updateProfile: (data) => api.put('/users/profile/me', data),
+    getUser: (id) => api.get(`/users/${id}`),
+    getAllUsers: (params) => api.get('/users', { params }),
+  },
+
+  // Driver endpoints
   drivers: {
     getAll: (params) => api.get('/drivers', { params }),
     getById: (id) => api.get(`/drivers/${id}`),
-    create: (driverData) => api.post('/drivers', driverData),
-    update: (id, driverData) => api.put(`/drivers/${id}`, driverData),
-    delete: (id) => api.delete(`/drivers/${id}`),
-    toggleAvailability: (id) => api.patch(`/drivers/${id}/availability`),
     search: (params) => api.get('/drivers/search', { params }),
     getAvailable: () => api.get('/drivers/available'),
+    getNearby: (params) => api.get('/drivers/nearby', { params }),
   },
 
+  // Booking endpoints
   bookings: {
-    create: (bookingData) => api.post('/bookings', bookingData),
+    create: (data) => api.post('/bookings', data),
     getAll: () => api.get('/bookings'),
     getById: (id) => api.get(`/bookings/${id}`),
-    update: (id, bookingData) => api.put(`/bookings/${id}`, bookingData),
-    cancel: (id) => api.patch(`/bookings/${id}/cancel`)
-  },
-
-  users: {
-    getProfile: () => api.get('/users/profile'),
-    updateProfile: (userData) => api.put('/users/profile', userData),
-    getBookings: () => api.get('/users/bookings'),
-    updatePassword: (passwordData) => api.put('/users/password', passwordData)
-  },
-
-  upload: {
-    image: (formData) => api.post('/upload/image', formData, {
-      headers: { 'Content-Type': 'multipart/form-data' }
-    })
+    update: (id, data) => api.put(`/bookings/${id}`, data),
+    cancel: (id) => api.patch(`/bookings/${id}/cancel`),
+    delete: (id) => api.delete(`/bookings/${id}`),
   }
 };
-
-export { api as default, endpoints };

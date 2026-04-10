@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { useLocation } from 'react-router-dom';
 import { FaSearch } from 'react-icons/fa';
+import driverService from '../services/driverService';
+import PilotCard from '../components/PilotCard';
 
 const SearchResults = () => {
   const location = useLocation();
@@ -13,14 +15,16 @@ const SearchResults = () => {
       try {
         setLoading(true);
         const params = new URLSearchParams(location.search);
-        const response = await fetch(`/api/pilots/search?${params}`);
         
-        if (!response.ok) {
-          throw new Error(`HTTP error! status: ${response.status}`);
+        // ✅ Convert URLSearchParams to object
+        const searchParams = {};
+        for (let [key, value] of params) {
+          searchParams[key] = value;
         }
-        
-        const data = await response.json();
-        setPilots(data);
+
+        // ✅ Use driverService instead of fetch
+        const results = await driverService.searchDrivers(searchParams);
+        setPilots(results);
       } catch (error) {
         console.error('Error fetching pilots:', error.message);
         setError(`Failed to load available pilots: ${error.message}`);
@@ -31,7 +35,6 @@ const SearchResults = () => {
 
     fetchPilots();
   }, [location.search]);
-
 
   if (loading) {
     return (

@@ -1,47 +1,57 @@
+// filepath: d:\VS CODE\Car Driver\frontend\src\pages\DriverDetails.jsx
 import { useEffect, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-//eslint-disable-next-line
-import { AnimatePresence, motion } from 'framer-motion';
-import {
-    FaCalendarAlt,
-    FaCar, FaClock,
-    FaCreditCard,
-    FaLanguage,
-    FaMapMarkerAlt,
-    FaStar,
-    FaTimes
-} from 'react-icons/fa';
+import { FaCalendarAlt, FaCar, FaClock, FaCreditCard, FaLanguage, FaMapMarkerAlt, FaStar, FaTimes } from 'react-icons/fa';
 import { toast } from 'react-toastify';
 import { useAuth } from '../hooks/useAuth';
 import driverService from '../services/driverService';
 
 const DriverDetails = () => {
+  // ✅ GET DRIVER ID FROM URL
   const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
-  
+
+  // ✅ STATE MANAGEMENT
   const [driver, setDriver] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [bookingModalOpen, setBookingModalOpen] = useState(false);
-  
-  // Booking form states
+  const [bookingLoading, setBookingLoading] = useState(false);
 
+  // ✅ BOOKING FORM STATE
   const [selectedDate, setSelectedDate] = useState('');
   const [selectedTime, setSelectedTime] = useState('');
   const [duration, setDuration] = useState(1);
   const [pickupLocation, setPickupLocation] = useState('');
   const [dropoffLocation, setDropoffLocation] = useState('');
 
+  // ✅ FETCH DRIVER DETAILS
   useEffect(() => {
     const fetchDriverDetails = async () => {
       try {
+        setLoading(true);
+        setError(null);
+
+        console.log(`📥 Fetching details for driver: ${id}`);
+
+        if (!id) {
+          throw new Error('Driver ID not found');
+        }
+
         const data = await driverService.getDriverById(id);
+
+        if (!data) {
+          throw new Error('Driver not found');
+        }
+
+        console.log('✅ Driver details loaded:', data);
         setDriver(data);
-      } catch (error) {
-        console.error('Error fetching driver details:', error);
-        setError('Failed to load driver details');
-        toast.error('Error loading driver details');
+      } catch (err) {
+        console.error('❌ Error loading driver:', err);
+        const errorMessage = err.message || 'Failed to load driver details';
+        setError(errorMessage);
+        toast.error(errorMessage);
       } finally {
         setLoading(false);
       }
@@ -50,245 +60,139 @@ const DriverDetails = () => {
     fetchDriverDetails();
   }, [id]);
 
+  // ✅ CALCULATE TOTAL AMOUNT
   const calculateTotalAmount = () => {
-    return driver?.hourlyRate ? driver.hourlyRate * duration : 0;
+    if (!driver?.hourlyRate) return 0;
+    return (driver.hourlyRate * duration).toFixed(2);
   };
 
+  // ✅ VALIDATE BOOKING FORM
+  const validateBooking = () => {
+    if (!selectedDate) {
+      toast.error('Please select a date');
+      return false;
+    }
+    if (!selectedTime) {
+      toast.error('Please select a time');
+      return false;
+    }
+    if (!pickupLocation.trim()) {
+      toast.error('Please enter pickup location');
+      return false;
+    }
+    if (duration < 1) {
+      toast.error('Duration must be at least 1 hour');
+      return false;
+    }
+    return true;
+  };
+
+  // ✅ HANDLE BOOKING SUBMISSION
   const handleBookingSubmit = async (e) => {
     e.preventDefault();
     setError(null);
-    
+
     try {
+      // Check if user is logged in
       if (!user) {
-        toast.error('Please login first');
+        toast.error('Please login to book a driver');
         navigate('/login', { state: { from: location.pathname } });
         return;
       }
-  
-      if (!selectedDate || !selectedTime || !pickupLocation) {
-        toast.error('Please fill in all required fields');
+
+      // Validate form
+      if (!validateBooking()) {
         return;
       }
-  
-      setLoading(true);
-  
-      // Create booking data with proper date formatting
+
+      setBookingLoading(true);
+
+      // Create datetime objects
       const startDateTime = new Date(`${selectedDate}T${selectedTime}`);
       const endDateTime = new Date(startDateTime);
-      endDateTime.setHours(endDateTime.getHours() + duration); 
-  
+      endDateTime.setHours(endDateTime.getHours() + parseInt(duration));
+
+      // Prepare booking data
       const bookingData = {
         driverId: driver._id,
         startTime: startDateTime.toISOString(),
         endTime: endDateTime.toISOString(),
         pickupLocation,
         dropLocation: dropoffLocation || pickupLocation,
-        totalAmount: calculateTotalAmount()
+        totalAmount: calculateTotalAmount(),
+        paymentMethod: 'COD'
       };
-  
-      console.log('Submitting booking:', bookingData); // Debug log
-  
+
+      console.log('📤 Submitting booking:', bookingData);
+
+      // Submit booking
       const response = await driverService.createBooking(bookingData);
-  
+
       if (response.success) {
-        toast.success('Booking confirmed successfully!');
+        toast.success('✅ Booking confirmed successfully!');
         setBookingModalOpen(false);
-        navigate('/booking/success', { 
-          state: { 
+        
+        // Navigate to booking success page
+        navigate('/booking/success', {
+          state: {
             booking: response.booking,
-            driver 
+            driver
           }
         });
+      } else {
+        throw new Error(response.message || 'Booking failed');
       }
     } catch (err) {
+      console.error('❌ Booking error:', err);
       const errorMessage = err.message || 'Failed to create booking';
       setError(errorMessage);
-      
-      // Handle specific error cases
-      if (errorMessage.includes('Authentication required') || errorMessage.includes('Session expired')) {
-        toast.error(errorMessage);
-        navigate('/login', { state: { from: location.pathname } });
-      } else if (errorMessage.includes('Cannot connect to server')) {
-        toast.error('Server connection failed. Please try again later.');
-      } else {
-        toast.error(errorMessage);
-      }
-      
-      console.error('Booking error:', err);
+      toast.error(errorMessage);
     } finally {
-      setLoading(false);
+      setBookingLoading(false);
     }
   };
-  const BookingModal = () => (
-    <AnimatePresence>
-      <motion.div 
-        className="fixed inset-0 bg-black bg-opacity-75 flex items-center justify-center z-50 p-4"
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        exit={{ opacity: 0 }}
-      >
-        <motion.div 
-          className="bg-white rounded-xl shadow-xl max-w-md w-full p-6 relative"
-          initial={{ scale: 0.9, opacity: 0 }}
-          animate={{ scale: 1, opacity: 1 }}
-          exit={{ scale: 0.9, opacity: 0 }}
-        >
-          <button 
-            type="button"
-            onClick={() => setBookingModalOpen(false)}
-            className="absolute top-4 right-4 text-gray-500 hover:text-gray-700"
-          >
-            <FaTimes className="w-6 h-6" />
-          </button>
-  
-          <form onSubmit={handleBookingSubmit} className="space-y-4">
-            <h3 className="text-xl font-semibold mb-4">Book {driver.name}</h3>
-  
-            <div className="space-y-4">
-              {error && (
-                <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
-                  <p className="text-red-700">{error}</p>
-                </div>
-              )}
-  
-              {/* Date Selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  <FaCalendarAlt className="inline mr-2" />
-                  Date
-                </label>
-                <input 
-                  type="date"
-                  value={selectedDate}
-                  onChange={(e) => setSelectedDate(e.target.value)}
-                  min={new Date().toISOString().split('T')[0]}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                  required
-                />
-              </div>
-  
-              {/* Time Selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  <FaClock className="inline mr-2" />
-                  Time
-                </label>
-                <input 
-                  type="time"
-                  value={selectedTime}
-                  onChange={(e) => setSelectedTime(e.target.value)}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                  required
-                />
-              </div>
-  
-              {/* Duration Selection */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  <FaClock className="inline mr-2" />
-                  Duration (hours)
-                </label>
-                <select
-                  value={duration}
-                  onChange={(e) => setDuration(Number(e.target.value))}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                  required
-                >
-                  {[1, 2, 3, 4, 5, 6, 7, 8].map(hours => (
-                    <option key={hours} value={hours}>{hours} hour{hours > 1 ? 's' : ''}</option>
-                  ))}
-                </select>
-              </div>
-  
-              {/* Pickup Location */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  <FaMapMarkerAlt className="inline mr-2" />
-                  Pickup Location
-                </label>
-                <input 
-                  type="text"
-                  value={pickupLocation}
-                  onChange={(e) => setPickupLocation(e.target.value)}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                  required
-                  placeholder="Enter pickup address"
-                />
-              </div>
-  
-              {/* Dropoff Location */}
-              <div>
-                <label className="block text-sm font-medium text-gray-700">
-                  <FaMapMarkerAlt className="inline mr-2" />
-                  Dropoff Location (optional)
-                </label>
-                <input 
-                  type="text"
-                  value={dropoffLocation}
-                  onChange={(e) => setDropoffLocation(e.target.value)}
-                  className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-                  placeholder="Enter dropoff address (if different)"
-                />
-              </div>
-  
-              {/* Total Amount */}
-              <div className="bg-gray-50 p-4 rounded-lg">
-                <div className="flex justify-between items-center">
-                  <div>
-                    <p className="text-sm text-gray-600">Duration:</p>
-                    <p className="font-medium">{duration} hour{duration > 1 ? 's' : ''}</p>
-                  </div>
-                  <div className="text-right">
-                    <p className="text-sm text-gray-600">Total Amount:</p>
-                    <p className="text-xl font-bold text-primary">${calculateTotalAmount()}</p>
-                  </div>
-                </div>
-              </div>
-  
-              {/* Submit Button */}
-              <button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-primary text-white p-3 rounded-md hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center"
-              >
-                {loading ? (
-                  <>
-                    <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                    </svg>
-                    Processing...
-                  </>
-                ) : (
-                  <>
-                    <FaCreditCard className="mr-2" />
-                    Confirm Booking
-                  </>
-                )}
-              </button>
-            </div>
-          </form>
-        </motion.div>
-      </motion.div>
-    </AnimatePresence>
-  );
 
+  // ✅ LOADING STATE
   if (loading) {
     return (
-      <div className="flex justify-center items-center min-h-screen">
-        <div className="animate-spin rounded-full h-16 w-16 border-t-4 border-primary"></div>
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading driver details...</p>
+        </div>
       </div>
     );
   }
 
-  if (error || !driver) {
+  // ✅ ERROR STATE
+  if (error && !driver) {
     return (
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
-          <p className="text-red-700">{error || 'Driver not found'}</p>
-          <button 
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center">
+          <div className="bg-red-50 border-l-4 border-red-500 p-6 rounded max-w-md">
+            <h3 className="text-lg font-medium text-red-800 mb-2">Error Loading Driver</h3>
+            <p className="text-red-600 mb-4">{error}</p>
+            <button
+              onClick={() => navigate(-1)}
+              className="bg-red-500 hover:bg-red-600 text-white px-4 py-2 rounded"
+            >
+              Go Back
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // ✅ DRIVER NOT FOUND
+  if (!driver) {
+    return (
+      <div className="flex items-center justify-center min-h-screen bg-gray-50">
+        <div className="text-center">
+          <p className="text-gray-600 mb-4">Driver not found</p>
+          <button
             onClick={() => navigate('/drivers')}
-            className="mt-4 text-primary hover:underline"
+            className="bg-primary hover:bg-primary/80 text-white px-4 py-2 rounded"
           >
             Back to Drivers
           </button>
@@ -297,68 +201,253 @@ const DriverDetails = () => {
     );
   }
 
+  // ✅ RENDER DRIVER DETAILS
   return (
-    <div className="bg-gray-50 min-h-screen">
-      <div className="max-w-7xl mx-auto px-4 py-8">
-        <div className="bg-white rounded-lg shadow-md p-6">
-          <div className="flex flex-col md:flex-row items-start md:items-center gap-6 mb-6">
-            <img 
-              src={driver.profilePhoto}
-              alt={driver.name}
-              className="w-32 h-32 rounded-full object-cover"
-            />
-            <div>
-              <h1 className="text-3xl font-bold text-gray-900">{driver.name}</h1>
-              <div className="flex items-center mt-2">
-                <FaStar className="text-yellow-400 mr-1" />
-                <span className="font-semibold">{driver.rating}</span>
-                <span className="text-gray-500 ml-1">({driver.reviewCount} reviews)</span>
-              </div>
+    <div className="min-h-screen bg-gray-50 py-12 px-4">
+      <div className="max-w-4xl mx-auto">
+        {/* Header */}
+        <div className="bg-white rounded-lg shadow-lg overflow-hidden">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 p-6">
+            {/* Profile Photo */}
+            <div className="md:col-span-1">
+              <img
+                src={driver.profilePhoto}
+                alt={driver.name}
+                className="w-full h-80 object-cover rounded-lg"
+              />
             </div>
-          </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-            <div>
-              <h2 className="text-xl font-semibold mb-4">Driver Information</h2>
-              <div className="space-y-4">
-                <p className="flex items-center text-gray-700">
-                  <FaClock className="mr-2 text-primary" />
-                  {driver.experience} years of experience
-                </p>
-                <p className="flex items-center text-gray-700">
-                  <FaCar className="mr-2 text-primary" />
-                  {driver.vehicleTypes.join(', ')}
-                </p>
-                {driver.languages?.length > 0 && (
-                  <p className="flex items-center text-gray-700">
-                    <FaLanguage className="mr-2 text-primary" />
-                    {driver.languages.join(', ')}
-                  </p>
+            {/* Driver Info */}
+            <div className="md:col-span-2 flex flex-col justify-between">
+              <div>
+                <h1 className="text-3xl font-bold text-gray-900 mb-2">{driver.name}</h1>
+
+                {/* Rating */}
+                <div className="flex items-center gap-2 mb-4">
+                  <div className="flex text-yellow-400">
+                    {[...Array(5)].map((_, i) => (
+                      <FaStar key={i} className={i < Math.floor(driver.rating || 0) ? 'fill-current' : ''} />
+                    ))}
+                  </div>
+                  <span className="text-gray-600">{driver.rating || 'N/A'} ({driver.totalRatings || 0} ratings)</span>
+                </div>
+
+                {/* Experience */}
+                <div className="grid grid-cols-2 gap-4 mb-4">
+                  <div>
+                    <p className="text-gray-600 text-sm">Experience</p>
+                    <p className="text-lg font-semibold">{driver.experience || 'N/A'} years</p>
+                  </div>
+                  <div>
+                    <p className="text-gray-600 text-sm">Hourly Rate</p>
+                    <p className="text-lg font-semibold">${driver.hourlyRate || 'N/A'}/hour</p>
+                  </div>
+                </div>
+
+                {/* Vehicle Types */}
+                {driver.vehicleTypes && driver.vehicleTypes.length > 0 && (
+                  <div className="mb-4">
+                    <p className="text-gray-600 text-sm mb-2">Vehicle Types</p>
+                    <div className="flex flex-wrap gap-2">
+                      {driver.vehicleTypes.map((type, idx) => (
+                        <span key={idx} className="bg-blue-100 text-blue-800 px-3 py-1 rounded-full text-sm flex items-center gap-1">
+                          <FaCar className="w-4 h-4" /> {type}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
                 )}
-              </div>
-            </div>
 
-            <div>
-              <div className="bg-gray-50 p-6 rounded-lg">
-                <h2 className="text-xl font-semibold mb-4">Booking Information</h2>
-                <p className="text-3xl font-bold text-primary mb-4">
-                  ${driver.hourlyRate}
-                  <span className="text-base font-normal text-gray-500">/hour</span>
-                </p>
-                <button
-                  onClick={() => setBookingModalOpen(true)}
-                  className="w-full bg-primary text-white py-3 rounded-md hover:bg-primary/90 transition-colors flex items-center justify-center"
-                >
-                  <FaCalendarAlt className="mr-2" />
-                  Book Now
-                </button>
+                {/* Availability */}
+                <div className="mb-4">
+                  <p className="text-gray-600 text-sm mb-2">Availability</p>
+                  <span className={`px-3 py-1 rounded-full text-sm font-medium ${
+                    driver.isAvailable ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                  }`}>
+                    {driver.isAvailable ? '✅ Available' : '❌ Not Available'}
+                  </span>
+                </div>
               </div>
+
+              {/* Book Button */}
+              <button
+                onClick={() => setBookingModalOpen(true)}
+                disabled={!driver.isAvailable}
+                className={`w-full py-3 rounded-lg font-semibold text-white text-lg transition ${
+                  driver.isAvailable
+                    ? 'bg-primary hover:bg-primary/80 cursor-pointer'
+                    : 'bg-gray-400 cursor-not-allowed'
+                }`}
+              >
+                {driver.isAvailable ? '📅 Book Now' : 'Not Available'}
+              </button>
             </div>
           </div>
         </div>
+
+        {/* Details Section */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mt-6">
+          {/* Languages */}
+          {driver.languages && driver.languages.length > 0 && (
+            <div className="bg-white p-6 rounded-lg shadow">
+              <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                <FaLanguage /> Languages
+              </h3>
+              <div className="flex flex-wrap gap-2">
+                {driver.languages.map((lang, idx) => (
+                  <span key={idx} className="bg-gray-100 px-3 py-1 rounded">
+                    {lang}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {/* Certifications */}
+          {driver.certifications && driver.certifications.length > 0 && (
+            <div className="bg-white p-6 rounded-lg shadow">
+              <h3 className="text-lg font-semibold mb-4">Certifications</h3>
+              <ul className="space-y-2">
+                {driver.certifications.map((cert, idx) => (
+                  <li key={idx} className="text-gray-700">✓ {cert}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+        </div>
       </div>
 
-      {bookingModalOpen && <BookingModal />}
+      {/* ✅ BOOKING MODAL */}
+      {bookingModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-md w-full p-6 max-h-96 overflow-y-auto">
+            {/* Modal Header */}
+            <div className="flex justify-between items-center mb-6">
+              <h2 className="text-2xl font-bold">Book {driver.name}</h2>
+              <button
+                onClick={() => setBookingModalOpen(false)}
+                className="text-gray-400 hover:text-gray-600"
+              >
+                <FaTimes className="w-6 h-6" />
+              </button>
+            </div>
+
+            {/* Booking Form */}
+            <form onSubmit={handleBookingSubmit} className="space-y-4">
+              {/* Date */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <FaCalendarAlt className="inline mr-2" />Pickup Date
+                </label>
+                <input
+                  type="date"
+                  value={selectedDate}
+                  onChange={(e) => setSelectedDate(e.target.value)}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+              </div>
+
+              {/* Time */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <FaClock className="inline mr-2" />Pickup Time
+                </label>
+                <input
+                  type="time"
+                  value={selectedTime}
+                  onChange={(e) => setSelectedTime(e.target.value)}
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+              </div>
+
+              {/* Duration */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  Duration (hours)
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  max="24"
+                  value={duration}
+                  onChange={(e) => setDuration(parseInt(e.target.value) || 1)}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+              </div>
+
+              {/* Pickup Location */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <FaMapMarkerAlt className="inline mr-2" />Pickup Location
+                </label>
+                <input
+                  type="text"
+                  value={pickupLocation}
+                  onChange={(e) => setPickupLocation(e.target.value)}
+                  placeholder="Enter pickup location"
+                  required
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+              </div>
+
+              {/* Dropoff Location */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <FaMapMarkerAlt className="inline mr-2" />Dropoff Location
+                </label>
+                <input
+                  type="text"
+                  value={dropoffLocation}
+                  onChange={(e) => setDropoffLocation(e.target.value)}
+                  placeholder="Leave blank if same as pickup"
+                  className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary focus:border-transparent"
+                />
+              </div>
+
+              {/* Payment Method (Fixed to COD) */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-2">
+                  <FaCreditCard className="inline mr-2" />Payment Method
+                </label>
+                <div className="bg-green-50 p-3 rounded-lg border border-green-200">
+                  <p className="font-semibold text-green-800">💵 Cash on Delivery (COD)</p>
+                  <p className="text-sm text-green-600">Pay the driver directly</p>
+                </div>
+              </div>
+
+              {/* Total Amount */}
+              <div className="bg-blue-50 p-4 rounded-lg border border-blue-200">
+                <p className="text-sm text-gray-600">Total Amount</p>
+                <p className="text-2xl font-bold text-blue-900">
+                  ${calculateTotalAmount()}
+                </p>
+              </div>
+
+              {/* Error Message */}
+              {error && (
+                <div className="bg-red-50 border border-red-200 p-3 rounded text-red-700 text-sm">
+                  {error}
+                </div>
+              )}
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={bookingLoading}
+                className={`w-full py-3 rounded-lg font-semibold text-white transition ${
+                  bookingLoading
+                    ? 'bg-gray-400 cursor-not-allowed'
+                    : 'bg-primary hover:bg-primary/80'
+                }`}
+              >
+                {bookingLoading ? '⏳ Booking...' : '✅ Confirm Booking'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

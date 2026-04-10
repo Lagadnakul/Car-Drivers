@@ -16,7 +16,7 @@ const PilotCard = ({ pilot }) => {
 
 
   return (
-    <div className="bg-white rounded-lg shadow-md overflow-hidden group hover:shadow-lg transition-shadow">
+    <div className="bg-white rounded-lg shadow-md overflow-hidden group hover:scale-105 transition-transform duration-300 ease-in-out">
       <div className="relative aspect-w-16 aspect-h-9">
         <img
           src={imageUrl}

@@ -1,63 +1,64 @@
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import EnhancedNavbar from './components/layout/EnhancedNavbar';
-import EnhancedFooter from './components/layout/EnhancedFooter';
-import Home from './pages/Home';
-import Drivers from './pages/Drivers';
-import DriverDetails from './pages/DriverDetails';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import About from './pages/About';
-import Contact from './pages/Contact';
-import { AuthProvider } from './context/AuthContext';
-import SearchResults from './pages/SearchResults';
-import BookingSuccess from './pages/BookingSuccess';
-import Dashboard from './pages/Dashboard';
-import ProtectedRoute from './components/auth/ProtectedRoute';
+import { Route, BrowserRouter as Router, Routes } from 'react-router-dom';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
+import ProtectedRoute from './components/common/ProtectedRoute';
+import Layout from './components/layout/Layout';
+import { AuthProvider } from './contexts/AuthContext';
+import { DataProvider } from './contexts/DataContext';
+import Login from './pages/auth/Login';
+import AllBookings from './pages/bookings/AllBookings';
+import BookingDetails from './pages/bookings/BookingDetails';
+import Dashboard from './pages/dashboard/Dashboard';
+import AddDriver from './pages/drivers/AddDriver';
+import AllDrivers from './pages/drivers/AllDrivers';
+import DriverDetails from './pages/drivers/DriverDetails';
+import VerifyDriver from './pages/drivers/VerifyDriver';
+import Profile from './pages/profile/Profile';
+import Reports from './pages/reports/Reports';
+import Settings from './pages/settings/Settings';
+import AddUser from './pages/users/AddUser';
+import AllUsers from './pages/users/AllUsers';
+import UserDetails from './pages/users/UserDetails';
 
 function App() {
   return (
     <AuthProvider>
-      <Router>
-        <div className="min-h-screen flex flex-col">
-          <EnhancedNavbar />
-          <main className="flex-grow pt-16">
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<Home />} />
-              <Route path="/pilots" element={<Drivers />} />
-              <Route path="/pilot/:id" element={<DriverDetails />} />
-              <Route path="/search-pilots" element={<SearchResults />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/contact" element={<Contact />} />
+      <DataProvider>
+        <Router>
+          <Routes>
+            {/* Public Routes */}
+            <Route path="/login" element={<Login />} />
 
-              {/* Protected Routes */}
-              <Route 
-                path="/booking/success" 
-                element={
-                  <ProtectedRoute>
-                    <BookingSuccess />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/dashboard" 
-                element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                } 
-              />
+            {/* Protected Routes */}
+            <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/dashboard" element={<Dashboard />} />
               
-              {/* Pilot Search Routes */}
-              <Route path="/pilots/search" element={<SearchResults />} />
-              <Route path="/pilots/available" element={<SearchResults />} />
-              <Route path="/pilots/:location" element={<SearchResults />} />
-            </Routes>
-          </main>
+              {/* Drivers Routes */}
+              <Route path="/drivers" element={<AllDrivers />} />
+              <Route path="/drivers/add" element={<AddDriver />} />
+              <Route path="/drivers/:id" element={<DriverDetails />} />
+              <Route path="/drivers/verify/:id" element={<VerifyDriver />} />
+              
+              {/* Bookings Routes */}
+              <Route path="/bookings" element={<AllBookings />} />
+              <Route path="/bookings/:id" element={<BookingDetails />} />
+              
+              {/* Users Routes */}
+              <Route path="/users" element={<AllUsers />} />
+              <Route path="/users/add" element={<AddUser />} />
+              <Route path="/users/:id" element={<UserDetails />} />
+              
+              {/* Reports */}
+              <Route path="/reports" element={<Reports />} />
+              
+              {/* Settings */}
+              <Route path="/settings" element={<Settings />} />
+              
+              {/* Profile */}
+              <Route path="/profile" element={<Profile />} />
+            </Route>
+          </Routes>
           <ToastContainer
             position="top-right"
             autoClose={5000}
@@ -70,11 +71,10 @@ function App() {
             pauseOnHover
             theme="light"
           />
-          <EnhancedFooter />
-        </div>
-      </Router>
+        </Router>
+      </DataProvider>
     </AuthProvider>
   );
 }
 
-export default App; // Add this line to properly export the component
+export default App;

@@ -12,16 +12,16 @@
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\" \"npm run dev:admin\"",
     "dev:frontend": "cd frontend && npm run dev",
     "dev:backend": "cd backend && npm run dev",
-    "dev:admin": "cd admin/Car-driver && npm run dev",
+    "dev:admin": "cd admin && npm run dev",
     "build": "npm run build:frontend && npm run build:admin",
     "build:frontend": "cd frontend && npm run build",
-    "build:admin": "cd admin/Car-driver && npm run build",
+    "build:admin": "cd admin && npm run build",
     "start": "cd backend && npm start",
-    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install && cd ../admin/Car-driver && npm install"
+    "install:all": "npm install && cd backend && npm install && cd ../frontend && npm install && cd ../admin && npm install"
   },
   "dependencies": {
     "cors": "^2.8.5",
-    "dotenv": "^16.5.0",
+    "dotenv": "^16.3.1",
     "express": "^4.18.2"
   },
   "devDependencies": {

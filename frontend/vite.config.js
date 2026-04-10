@@ -1,14 +1,15 @@
-import { defineConfig } from 'vite';
+// filepath: d:\VS CODE\Car Driver\frontend\vite.config.js
 import react from '@vitejs/plugin-react';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { defineConfig } from 'vite';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 export default defineConfig(({ mode }) => ({
   plugins: [react()],
-  
+
   resolve: {
     alias: {
       '@': path.resolve(__dirname, './src'),
@@ -23,15 +24,8 @@ export default defineConfig(({ mode }) => ({
 
   server: {
     host: true,
-    port: 5173,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:4000',
-        changeOrigin: true,
-        secure: false,
-        rewrite: (path) => path.replace(/^\/api/, '')
-      }
-    }
+    port: 5175,
+    // ✅ NO PROXY NEEDED - We use full URL in Axios instead
   },
 
   build: {
@@ -49,6 +43,6 @@ export default defineConfig(({ mode }) => ({
   },
 
   define: {
-    'process.env': {}
+    __DEV__: mode === 'development'
   }
 }));

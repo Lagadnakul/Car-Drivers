@@ -132,18 +132,11 @@ const Drivers = () => {
       </div>
 
       {/* Drivers Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        {filteredDrivers.map((driver, index) => (
-          <motion.div
-            key={driver._id}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.3, delay: index * 0.1 }}
-          >
-            <PilotCard pilot={driver} />
-          </motion.div>
-        ))}
-      </div>
+   <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+  {filteredDrivers.map((driver) => (
+    <PilotCard key={driver._id} pilot={driver} />
+  ))}
+</div>
 
       {/* No Results Message */}
       {filteredDrivers.length === 0 && !loading && (
