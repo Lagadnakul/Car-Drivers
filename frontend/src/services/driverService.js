@@ -25,6 +25,78 @@ const mockDrivers = [
       phone: '+1 (555) 123-4567',
       email: 'john@example.com'
     }
+  },
+  {
+    _id: 'mock-2',
+    name: 'Sarah Johnson',
+    rating: 4.8,
+    experience: 6,
+    profilePhoto: pilot2Photo,
+    hourlyRate: 40,
+    isAvailable: true,
+    vehicleTypes: ['Sedan', 'SUV'],
+    languages: ['English', 'French'],
+    documents: { profilePhoto: pilot2Photo },
+    certifications: ['Advanced Driving'],
+    locations: ['Los Angeles', 'Orange County'],
+    contactInfo: {
+      phone: '+1 (555) 234-5678',
+      email: 'sarah@example.com'
+    }
+  },
+  {
+    _id: 'mock-3',
+    name: 'Michael Chen',
+    rating: 4.7,
+    experience: 10,
+    profilePhoto: pilot3Photo,
+    hourlyRate: 50,
+    isAvailable: true,
+    vehicleTypes: ['Luxury', 'SUV', 'Van'],
+    languages: ['English', 'Mandarin', 'Spanish'],
+    documents: { profilePhoto: pilot3Photo },
+    certifications: ['Advanced Driving', 'Defensive Driving', 'Executive Driver'],
+    locations: ['Chicago', 'Suburbs'],
+    contactInfo: {
+      phone: '+1 (555) 345-6789',
+      email: 'michael@example.com'
+    }
+  },
+  {
+    _id: 'mock-4',
+    name: 'Emma Wilson',
+    rating: 4.6,
+    experience: 5,
+    profilePhoto: pilot4Photo,
+    hourlyRate: 35,
+    isAvailable: true,
+    vehicleTypes: ['Sedan', 'Compact'],
+    languages: ['English', 'Italian'],
+    documents: { profilePhoto: pilot4Photo },
+    certifications: ['Advanced Driving'],
+    locations: ['Boston', 'Cambridge'],
+    contactInfo: {
+      phone: '+1 (555) 456-7890',
+      email: 'emma@example.com'
+    }
+  },
+  {
+    _id: 'mock-5',
+    name: 'David Rodriguez',
+    rating: 4.5,
+    experience: 7,
+    profilePhoto: pilot5Photo,
+    hourlyRate: 42,
+    isAvailable: true,
+    vehicleTypes: ['Sedan', 'SUV'],
+    languages: ['English', 'Spanish', 'Portuguese'],
+    documents: { profilePhoto: pilot5Photo },
+    certifications: ['Advanced Driving'],
+    locations: ['Miami', 'Fort Lauderdale'],
+    contactInfo: {
+      phone: '+1 (555) 567-8901',
+      email: 'david@example.com'
+    }
   }
 ];
 
@@ -124,9 +196,17 @@ const driverService = {
 
       const drivers = response.data?.drivers || [];
       console.log(`✅ Found ${drivers.length} drivers`);
+      
+      // Return mock drivers if none found
+      if (drivers.length === 0) {
+        console.log('ℹ️ No drivers found, returning mock data');
+        return mockDrivers;
+      }
+      
       return drivers;
     } catch (error) {
       console.error('❌ Error searching drivers:', error.message);
+      console.log('📦 Returning mock drivers as fallback');
       return mockDrivers;
     }
   },

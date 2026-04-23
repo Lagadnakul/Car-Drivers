@@ -14,15 +14,23 @@ const SearchResults = () => {
     const fetchPilots = async () => {
       try {
         setLoading(true);
-        const params = new URLSearchParams(location.search);
         
-        // ✅ Convert URLSearchParams to object
-        const searchParams = {};
-        for (let [key, value] of params) {
-          searchParams[key] = value;
+        // ✅ Get search params from location.state (passed from BookingSearch)
+        let searchParams = {};
+        
+        if (location.state?.searchParams) {
+          searchParams = location.state.searchParams;
+        } else if (location.search) {
+          // Fallback to URL search params if location.state is not available
+          const params = new URLSearchParams(location.search);
+          for (let [key, value] of params) {
+            searchParams[key] = value;
+          }
         }
 
-        // ✅ Use driverService instead of fetch
+        console.log('📍 Searching with params:', searchParams);
+
+        // ✅ Use driverService to search
         const results = await driverService.searchDrivers(searchParams);
         setPilots(results);
       } catch (error) {
@@ -34,7 +42,7 @@ const SearchResults = () => {
     };
 
     fetchPilots();
-  }, [location.search]);
+  }, [location]);
 
   if (loading) {
     return (

@@ -1,80 +1,72 @@
-// filepath: d:\VS CODE\Car Driver\frontend\src\services\api.js
+// filepath: src/services/api.js
 import axios from 'axios';
 import { toast } from 'react-toastify';
 
-// ✅ Configure base URL
+// ✅ Base URL
 const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
 
 console.log('🔗 API Base URL:', BASE_URL);
 
-// ✅ Create Axios instance
+// ✅ Axios instance
 const api = axios.create({
   baseURL: BASE_URL,
+  withCredentials: true,
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true,
-  timeout: 10000 // 10 second timeout
+  timeout: 10000
 });
 
-// ✅ REQUEST INTERCEPTOR - Add token to headers
+// ✅ REQUEST INTERCEPTOR
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
+
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
-      console.log('✅ Token added to request');
     }
-    console.log(`📤 API Request: ${config.method.toUpperCase()} ${config.url}`);
+
+    console.log(`📤 ${config.method?.toUpperCase()} ${config.url}`);
     return config;
   },
-  (error) => {
-    console.error('❌ Request error:', error);
-    return Promise.reject(error);
-  }
+  (error) => Promise.reject(error)
 );
 
-// ✅ RESPONSE INTERCEPTOR - Handle errors
+// ✅ RESPONSE INTERCEPTOR
 api.interceptors.response.use(
   (response) => {
-    console.log(`✅ API Response: ${response.status} ${response.config.url}`);
+    console.log(`✅ ${response.status} ${response.config.url}`);
     return response;
   },
   (error) => {
     console.error('❌ API Error:', error);
 
     if (error.response) {
-      // Server responded with error status
+      const message = error.response.data?.message || 'Something went wrong';
+
       switch (error.response.status) {
         case 400:
-          toast.error(error.response.data?.message || 'Bad request');
+        case 403:
+        case 404:
+        case 500:
+          toast.error(message);
           break;
+
         case 401:
           localStorage.removeItem('token');
           localStorage.removeItem('user');
-          window.location.href = '/login';
           toast.error('Session expired. Please login again.');
+          window.location.href = '/login';
           break;
-        case 403:
-          toast.error('You do not have permission to perform this action');
-          break;
-        case 404:
-          toast.error('Resource not found');
-          break;
-        case 500:
-          toast.error('Server error. Please try again later');
-          break;
+
         default:
-          toast.error(error.response.data?.message || 'An error occurred');
+          toast.error(message);
       }
+
     } else if (error.request) {
-      // Request made but no response
-      console.error('No response received:', error.request);
-      toast.error('Network error. Please check your connection.');
+      toast.error('Server not responding. Check backend.');
     } else {
-      // Error in request setup
-      console.error('Error:', error.message);
-      toast.error(error.message || 'An unexpected error occurred');
+      toast.error(error.message);
     }
 
     return Promise.reject(error);
@@ -83,33 +75,30 @@ api.interceptors.response.use(
 
 export default api;
 
-// ✅ API ENDPOINTS OBJECT
+// ✅ API ENDPOINTS
 export const endpoints = {
-  // Auth endpoints
+
+  // 🔐 AUTH
   auth: {
     register: (data) => api.post('/auth/register', data),
     login: (data) => api.post('/auth/login', data),
     logout: () => api.post('/auth/logout'),
+    getMe: () => api.get('/auth/me'), // ✅ FIXED
   },
 
-  // User endpoints
+  // 👤 USERS
   users: {
-    getProfile: () => api.get('/users/profile/me'),
-    updateProfile: (data) => api.put('/users/profile/me', data),
-    getUser: (id) => api.get(`/users/${id}`),
-    getAllUsers: (params) => api.get('/users', { params }),
+    getProfile: () => api.get('/auth/me'), // ✅ FIXED (was wrong)
+    updateProfile: (data) => api.put('/auth/profile', data), // adjust if needed
   },
 
-  // Driver endpoints
+  // 🚗 DRIVERS
   drivers: {
     getAll: (params) => api.get('/drivers', { params }),
     getById: (id) => api.get(`/drivers/${id}`),
-    search: (params) => api.get('/drivers/search', { params }),
-    getAvailable: () => api.get('/drivers/available'),
-    getNearby: (params) => api.get('/drivers/nearby', { params }),
   },
 
-  // Booking endpoints
+  // 📦 BOOKINGS
   bookings: {
     create: (data) => api.post('/bookings', data),
     getAll: () => api.get('/bookings'),

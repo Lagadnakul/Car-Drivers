@@ -40,16 +40,23 @@ const startServer = async () => {
     // ✅ Store DB status globally
     app.locals.dbConnected = dbConnected;
 
-    // ✅ CORS
+    // ✅ CORS - Must be FIRST middleware (before routes)
     app.use(cors({
       origin: [
         "http://localhost:5173",
-        "http://localhost:5174"
+        "http://localhost:5174",
+        "http://localhost:5175",
+        "http://localhost:5176",
+        "http://localhost:5177"  // ✅ Added for new frontend port
       ],
-      credentials: true
+      credentials: true,
+      methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+      allowedHeaders: ["Content-Type", "Authorization"],
+      exposedHeaders: ["Content-Length", "X-Total-Count"],
+      maxAge: 86400 // 24 hours
     }));
 
-    // ✅ Body parsers
+    // ✅ Body parsers - AFTER CORS
     app.use(express.json());
     app.use(express.urlencoded({ extended: true }));
     app.use(cookieParser());

@@ -18,8 +18,8 @@ const Register = () => {
   const navigate = useNavigate();
 
   const validateForm = () => {
-    // Update password regex to require at least 8 characters
-    const passwordRegex = /^(?=.*[A-Za-z])(?=.*\d)[A-Za-z\d]{8,}$/;
+    // Password must be at least 6 characters (backend requirement)
+    const passwordRegex = /^.{6,}$/;
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   
     if (!formData.fullName.trim()) {
@@ -33,7 +33,7 @@ const Register = () => {
     }
   
     if (!passwordRegex.test(formData.password)) {
-      setError('Password must be at least 8 characters long and contain both letters and numbers');
+      setError('Password must be at least 6 characters long');
       return false;
     }
   

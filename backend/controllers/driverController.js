@@ -63,10 +63,35 @@ export const getAllDrivers = async (req, res) => {
   }
 };
 
-// ✅ GET SINGLE DRIVER
+// ✅ GET SINGLE DRIVER (handles both real and mock driver IDs)
 export const getDriver = async (req, res) => {
   try {
-    const driver = await Driver.findById(req.params.id)
+    const { id } = req.params;
+
+    // Check if it's a mock driver ID (mock-1, mock-2, or just 1, 2, etc.)
+    if (id.startsWith('mock-') || !isNaN(id)) {
+      console.log(`📦 Mock driver requested: ${id}`);
+      // Convert numeric IDs to mock format
+      const mockId = id.startsWith('mock-') ? id : `mock-${id}`;
+      // Return mock driver data
+      const mockDriver = {
+        _id: mockId,
+        name: 'Mock Driver',
+        rating: 4.5,
+        experience: 5,
+        hourlyRate: 40,
+        isAvailable: true,
+        vehicleTypes: ['Sedan'],
+        message: 'Using mock driver data'
+      };
+      return res.status(200).json({
+        success: true,
+        driver: mockDriver
+      });
+    }
+
+    // Try to find real driver in database
+    const driver = await Driver.findById(id)
       .populate('user', 'name email phone profilePhoto')
       .populate({
         path: 'ratings.user',
@@ -96,10 +121,19 @@ export const getDriver = async (req, res) => {
 // ✅ SEARCH DRIVERS
 export const searchDrivers = async (req, res) => {
   try {
-    const { q, vehicleType, minRating } = req.query;
+    const { 
+      q, 
+      vehicleType, 
+      minRating,
+      pickupLocation,
+      dropoffLocation,
+      date,
+      time
+    } = req.query;
 
-    const filter = {};
+    const filter = { isAvailable: true };
 
+    // Search by name or driver query
     if (q) {
       const users = await User.find({
         $or: [
@@ -111,13 +145,26 @@ export const searchDrivers = async (req, res) => {
       filter.user = { $in: users.map(u => u._id) };
     }
 
-    if (vehicleType) filter.vehicleTypes = { $in: [vehicleType] };
-    if (minRating) filter.rating = { $gte: parseFloat(minRating) };
+    // Filter by vehicle type
+    if (vehicleType && vehicleType !== 'undefined') {
+      filter.vehicleTypes = { $in: [vehicleType] };
+    }
+
+    // Filter by minimum rating
+    if (minRating) {
+      filter.rating = { $gte: parseFloat(minRating) };
+    }
+
+    // Note: Location-based filtering could be added if drivers have location data
+    // For now, we return all available drivers regardless of pickup/dropoff locations
+    console.log('🔍 Searching drivers with filter:', filter);
 
     const drivers = await Driver.find(filter)
       .populate('user', 'name email phone')
       .limit(20)
       .sort('-rating');
+
+    console.log(`✅ Found ${drivers.length} available drivers`);
 
     res.status(200).json({
       success: true,

@@ -14,7 +14,7 @@ const BookingSearch = () => {
   });
 
   const { fetchData: searchPilots, loading, error: apiError } = useAxios({
-    url: '/api/drivers/search',
+    url: '/drivers/search',
     method: 'get',
     immediate: false
   });

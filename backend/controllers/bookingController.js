@@ -9,62 +9,93 @@ export const createBooking = async (req, res) => {
     const { driverId, startTime, endTime, pickupLocation, dropLocation, totalAmount } = req.body;
     const userId = req.user._id;
 
+    console.log('📥 Booking request:', { driverId, startTime, endTime, pickupLocation, userId });
+
     // Validation
     if (!driverId || !startTime || !endTime || !pickupLocation) {
+      console.error('❌ Missing fields:', { driverId, startTime, endTime, pickupLocation });
       return res.status(400).json({
         success: false,
         message: 'Missing required fields: driverId, startTime, endTime, pickupLocation'
       });
     }
 
-    // Validate driver ID format
-    if (!mongoose.Types.ObjectId.isValid(driverId)) {
+    // Validate driver ID format (allow both mock and real IDs)
+    if (typeof driverId !== 'string' || driverId.trim() === '') {
       return res.status(400).json({
         success: false,
         message: 'Invalid driver ID format'
       });
     }
 
-    // Check if driver exists
-    const driver = await Driver.findById(driverId).populate('user', 'name email');
-    if (!driver) {
-      return res.status(404).json({
+    // Check if it's a numeric ID (1, 2, 3, etc.) - treat as mock driver
+    const isNumericId = !isNaN(driverId);
+    const isMockId = driverId.startsWith('mock-');
+    
+    // Only validate ObjectId format if it's not numeric and not mock-prefixed
+    if (!isMockId && !isNumericId && !mongoose.Types.ObjectId.isValid(driverId)) {
+      return res.status(400).json({
         success: false,
-        message: 'Driver not found'
+        message: 'Invalid driver ID format'
       });
     }
 
-    // Check if driver is available
-    if (!driver.isAvailable) {
-      return res.status(400).json({
-        success: false,
-        message: 'Driver is not available'
+    // Check if driver exists (skip for mock drivers and numeric IDs)
+    if (!isMockId && !isNumericId) {
+      const driver = await Driver.findById(driverId).populate('user', 'name email');
+      if (!driver) {
+        return res.status(404).json({
+          success: false,
+          message: 'Driver not found'
+        });
+      }
+
+      // Check if driver is available
+      if (!driver.isAvailable) {
+        return res.status(400).json({
+          success: false,
+          message: 'Driver is not available'
+        });
+      }
+
+      // Check for conflicting bookings
+      const startDate = new Date(startTime);
+      const endDate = new Date(endTime);
+
+      const conflictingBooking = await Booking.findOne({
+        driver: driverId,
+        status: { $in: ['pending', 'confirmed'] },
+        $or: [
+          { startTime: { $lte: endDate }, endTime: { $gte: startDate } }
+        ]
       });
-    }
 
-    // Check for conflicting bookings
-    const startDate = new Date(startTime);
-    const endDate = new Date(endTime);
+      if (conflictingBooking) {
+        return res.status(400).json({
+          success: false,
+          message: 'Driver is not available for this time slot'
+        });
+      }
 
-    const conflictingBooking = await Booking.findOne({
-      driver: driverId,
-      status: { $in: ['pending', 'confirmed'] },
-      $or: [
-        { startTime: { $lte: endDate }, endTime: { $gte: startDate } }
-      ]
-    });
-
-    if (conflictingBooking) {
-      return res.status(400).json({
-        success: false,
-        message: 'Driver is not available for this time slot'
-      });
+      // Update driver availability
+      driver.isAvailable = false;
+      driver.totalTrips = (driver.totalTrips || 0) + 1;
+      await driver.save();
     }
 
     // Create booking
+    const startDate = new Date(startTime);
+    const endDate = new Date(endTime);
+
+    // Normalize driver ID for mock drivers
+    const normalizedDriverId = (isMockId || isNumericId) ? (isNumericId ? `mock-${driverId}` : driverId) : driverId;
+    
+    // Use driverId reference only for real drivers
+    const driverRef = (!isMockId && !isNumericId) ? driverId : null;
+
     const booking = await Booking.create({
       user: userId,
-      driver: driverId,
+      driver: driverRef,
       startTime: startDate,
       endTime: endDate,
       pickupLocation,
@@ -72,20 +103,16 @@ export const createBooking = async (req, res) => {
       totalAmount: parseFloat(totalAmount) || 0,
       status: 'confirmed', // ✅ Auto-confirm for COD
       paymentMethod: 'COD',
-      paymentStatus: 'pending'
+      paymentStatus: 'pending',
+      mockDriverId: (isMockId || isNumericId) ? normalizedDriverId : null
     });
 
-    // Update driver availability
-    driver.isAvailable = false;
-    driver.totalTrips = (driver.totalTrips || 0) + 1;
-    await driver.save();
+    console.log('✅ Booking created:', booking._id);
 
     // Populate booking details
     const populatedBooking = await Booking.findById(booking._id)
       .populate('user', 'name email phone')
       .populate('driver', 'user hourlyRate vehicleTypes rating');
-
-    console.log('✅ Booking created:', booking._id);
 
     res.status(201).json({
       success: true,
@@ -93,7 +120,7 @@ export const createBooking = async (req, res) => {
       booking: populatedBooking
     });
   } catch (error) {
-    console.error('Booking creation error:', error);
+    console.error('❌ Booking creation error:', error);
     res.status(500).json({
       success: false,
       message: error.message || 'Failed to create booking'

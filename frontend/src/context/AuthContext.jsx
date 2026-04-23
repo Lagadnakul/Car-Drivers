@@ -11,9 +11,21 @@ export const AuthProvider = ({ children }) => {
   const [authError, setAuthError] = useState(null);
 
   useEffect(() => {
-    const storedUser = localStorage.getItem('user');
-    if (storedUser) {
-      setUser(JSON.parse(storedUser));
+    try {
+      const storedUser = localStorage.getItem('user');
+      if (storedUser && storedUser !== 'undefined') {
+        setUser(JSON.parse(storedUser));
+      } else {
+        // Clear invalid data
+        localStorage.removeItem('user');
+        localStorage.removeItem('token');
+        setUser(null);
+      }
+    } catch (error) {
+      console.error('Error parsing stored user:', error);
+      localStorage.removeItem('user');
+      localStorage.removeItem('token');
+      setUser(null);
     }
   }, []);
 
@@ -49,7 +61,7 @@ export const AuthProvider = ({ children }) => {
         password: credentials.password
       });
       
-      const { user: userData, token } = response.data;
+      const { data: userData, token } = response.data;
       
       localStorage.setItem('token', token);
       localStorage.setItem('user', JSON.stringify(userData));

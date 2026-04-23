@@ -15,7 +15,7 @@ export const useAxios = ({ url, method = 'get', immediate = true, initialData = 
         url,
         method,
         ...options,
-        baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000',
+        baseURL: import.meta.env.VITE_API_URL || 'http://localhost:5000/api',
         headers: {
           'Content-Type': 'application/json',
           ...options.headers
