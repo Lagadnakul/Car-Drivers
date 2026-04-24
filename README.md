@@ -264,7 +264,7 @@ Car-Drivers/
 
 # 📸 13. Screenshots
 
-⚠️ Add real UI screenshots here (critical for trust)
+
 <img width="1895" height="864" alt="image" src="https://github.com/user-attachments/assets/f23bf3b3-2d63-4a0f-903d-de5834e7a40c" />
 
 ---
