@@ -1,8 +1,8 @@
-import React, { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
+import { useEffect, useState } from 'react';
 import { FaSearch } from 'react-icons/fa';
-import driverService from '../services/driverService';
+import { useLocation } from 'react-router-dom';
 import PilotCard from '../components/PilotCard';
+import driverService from '../services/driverService';
 
 const SearchResults = () => {
   const location = useLocation();

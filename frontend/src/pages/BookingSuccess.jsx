@@ -1,7 +1,7 @@
-import React, { useEffect, useState } from 'react';
-import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
-import { FiCheckCircle, FiMapPin, FiClock, FiUser, FiDollarSign, FiCalendar } from 'react-icons/fi';
+import { useEffect, useState } from 'react';
+import { FiCalendar, FiCheckCircle, FiClock, FiDollarSign, FiMapPin } from 'react-icons/fi';
+import { useLocation, useNavigate } from 'react-router-dom';
 import '../styles/BookingSuccess.css';
 
 const BookingSuccess = () => {
