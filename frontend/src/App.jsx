@@ -1,79 +1,118 @@
+import { lazy, Suspense } from 'react';
 import { Route, BrowserRouter as Router, Routes } from 'react-router-dom';
-import { ToastContainer } from 'react-toastify';
-import 'react-toastify/dist/ReactToastify.css';
+import { Toaster } from 'sonner';
+import ErrorBoundary from './components/ErrorBoundary';
 import ProtectedRoute from './components/auth/ProtectedRoute';
+import EnhancedFooter from './components/layout/EnhancedFooter';
 import EnhancedNavbar from './components/layout/EnhancedNavbar';
+import { PageSpinner } from './components/shared/Spinner';
+import VerificationBanner from './components/shared/VerificationBanner';
 import { AuthProvider } from './context/AuthContext';
-import About from './pages/About';
-import BookingSuccess from './pages/BookingSuccess';
-import Contact from './pages/Contact';
-import Dashboard from './pages/Dashboard';
-import DriverDetails from './pages/DriverDetails';
-import Drivers from './pages/Drivers';
+
+// Eagerly loaded — critical path
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Register from './pages/Register';
-import SearchResults from './pages/SearchResults';
-import Services from './pages/Services';
+
+// Lazy loaded — below the fold
+const Drivers        = lazy(() => import('./pages/Drivers'));
+const DriverDetails  = lazy(() => import('./pages/DriverDetails'));
+const SearchResults  = lazy(() => import('./pages/SearchResults'));
+const About          = lazy(() => import('./pages/About'));
+const Contact        = lazy(() => import('./pages/Contact'));
+const Services       = lazy(() => import('./pages/Services'));
+const Dashboard      = lazy(() => import('./pages/Dashboard'));
+const BookingSuccess = lazy(() => import('./pages/BookingSuccess'));
+const BookingFailed = lazy(() => import('./pages/BookingFailed'));
+const ForgotPassword = lazy(() => import('./pages/ForgotPassword'));
+const ResetPassword  = lazy(() => import('./pages/ResetPassword'));
+const VerifyEmail    = lazy(() => import('./pages/VerifyEmail'));
+const Profile         = lazy(() => import('./pages/Profile'));
+const DriverDashboard = lazy(() => import('./pages/DriverDashboard'));
+const Terms           = lazy(() => import('./pages/Terms'));
+const Privacy         = lazy(() => import('./pages/Privacy'));
+const BookingTrack    = lazy(() => import('./pages/BookingTrack'));
+
 
 function App() {
   return (
     <AuthProvider>
       <Router>
-        <div className="min-h-screen flex flex-col">
+        <ErrorBoundary>
+        {/* Skip to main content — accessibility */}
+        <a
+          href="#main"
+          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-4 focus:z-[9999] focus:bg-primary focus:text-on-primary focus:font-ui-button focus:text-ui-button focus:uppercase focus:tracking-widest focus:px-6 focus:py-3"
+        >
+          Skip to main content
+        </a>
+        <div className="min-h-screen flex flex-col bg-surface">
           <EnhancedNavbar />
-          <main className="flex-grow pt-16">
-            <Routes>
-              {/* Public Routes */}
-              <Route path="/" element={<Home />} />
-              <Route path="/pilots" element={<Drivers />} />
-              <Route path="/pilot/:id" element={<DriverDetails />} />
-              <Route path="/search-pilots" element={<SearchResults />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/register" element={<Register />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/services" element={<Services />} />
+          <main id="main" className="flex-grow pt-16 md:pt-20">
+            <VerificationBanner />
+            <Suspense fallback={<PageSpinner />}>
+              <Routes>
+                {/* Public */}
+                <Route path="/"               element={<Home />} />
+                <Route path="/pilots"         element={<Drivers />} />
+                <Route path="/pilot/:id"      element={<DriverDetails />} />
+                <Route path="/search-pilots"  element={<SearchResults />} />
+                <Route path="/pilots/search"  element={<SearchResults />} />
+                <Route path="/pilots/available" element={<SearchResults />} />
+                <Route path="/pilots/:location" element={<SearchResults />} />
+                <Route path="/login"                  element={<Login />} />
+                <Route path="/register"              element={<Register />} />
+                <Route path="/forgot-password"       element={<ForgotPassword />} />
+                <Route path="/reset-password/:token" element={<ResetPassword />} />
+                <Route path="/verify-email/:token"   element={<VerifyEmail />} />
+                <Route path="/about"                 element={<About />} />
+                <Route path="/contact"               element={<Contact />} />
+                <Route path="/services"              element={<Services />} />
+                <Route path="/terms"                 element={<Terms />} />
+                <Route path="/privacy"               element={<Privacy />} />
+                <Route path="/track/:ref"            element={<BookingTrack />} />
 
-              {/* Protected Routes */}
-              <Route 
-                path="/booking/success" 
-                element={
-                  <ProtectedRoute>
-                    <BookingSuccess />
-                  </ProtectedRoute>
-                } 
-              />
-              <Route 
-                path="/dashboard" 
-                element={
-                  <ProtectedRoute>
-                    <Dashboard />
-                  </ProtectedRoute>
-                } 
-              />
-              
-              {/* Pilot Search Routes */}
-              <Route path="/pilots/search" element={<SearchResults />} />
-              <Route path="/pilots/available" element={<SearchResults />} />
-              <Route path="/pilots/:location" element={<SearchResults />} />
+                {/* Protected */}
+                <Route path="/booking/success" element={
+                  <ProtectedRoute><BookingSuccess /></ProtectedRoute>
+                } />
+                <Route path="/booking/failed" element={
+                  <ProtectedRoute><BookingFailed /></ProtectedRoute>
+                } />
+                <Route path="/dashboard" element={
+                  <ProtectedRoute><Dashboard /></ProtectedRoute>
+                } />
+                <Route path="/profile" element={
+                  <ProtectedRoute><Profile /></ProtectedRoute>
+                } />
+                <Route path="/driver-dashboard" element={
+                  <ProtectedRoute><DriverDashboard /></ProtectedRoute>
+                } />
               </Routes>
+            </Suspense>
           </main>
-          <ToastContainer
+
+          <EnhancedFooter />
+
+          <Toaster
             position="top-right"
-            autoClose={5000}
-            hideProgressBar={false}
-            newestOnTop={false}
-            closeOnClick
-            rtl={false}
-            pauseOnFocusLoss
-            draggable
-            pauseOnHover
-            theme="light"
+            toastOptions={{
+              style: {
+                background: '#fbf9f9',
+                border: '1px solid #1b1c1c',
+                borderRadius: '0',
+                fontFamily: "'Hanken Grotesk', sans-serif",
+                fontSize: '14px',
+                color: '#1b1c1c',
+                letterSpacing: '0.02em',
+              },
+            }}
           />
         </div>
+        </ErrorBoundary>
       </Router>
     </AuthProvider>
   );
 }
+
 export default App;

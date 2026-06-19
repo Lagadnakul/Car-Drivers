@@ -1,306 +1,252 @@
 <div align="center">
 
-# 🚗 Car Drivers Platform
+<img src="./logo.png" alt="GoPilot" width="120" />
 
-### Scalable Driver Booking & Management System (Production-Ready MERN App)
+# GoPilot
 
-<p align="center">
-  <img src="https://readme-typing-svg.herokuapp.com/?lines=Production-Ready+System;Clean+Architecture;JWT+Secure+Auth;Scalable+Backend+Design&font=Fira%20Code&center=true&width=450&height=50&duration=3500&pause=800">
-</p>
+**Premium Chauffeur Booking Platform**
 
-![License](https://img.shields.io/github/license/Lagadnakul/Car-Drivers)
-![Issues](https://img.shields.io/github/issues/Lagadnakul/Car-Drivers)
-![Stars](https://img.shields.io/github/stars/Lagadnakul/Car-Drivers)
-![Node](https://img.shields.io/badge/node-18+-green)
+[![React](https://img.shields.io/badge/React-18-61DAFB?style=flat-square&logo=react&logoColor=white)](https://react.dev)
+[![Node.js](https://img.shields.io/badge/Node.js-20-339933?style=flat-square&logo=node.js&logoColor=white)](https://nodejs.org)
+[![MongoDB](https://img.shields.io/badge/MongoDB-7-47A248?style=flat-square&logo=mongodb&logoColor=white)](https://mongodb.com)
+[![TailwindCSS](https://img.shields.io/badge/Tailwind-3-06B6D4?style=flat-square&logo=tailwind-css&logoColor=white)](https://tailwindcss.com)
+[![Vite](https://img.shields.io/badge/Vite-6-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev)
+[![Docker](https://img.shields.io/badge/Docker-ready-2496ED?style=flat-square&logo=docker&logoColor=white)](https://docker.com)
+[![License](https://img.shields.io/badge/License-MIT-yellow?style=flat-square)](LICENSE)
 
----
-
-### 🌐 Live System
-
-🚀 Frontend: https://car-drivers-frontend-7r6i.vercel.app
-⚙️ Backend API: https://car-drivers-backend-7yig.vercel.app
+[Live Demo](https://your-frontend.vercel.app) &nbsp;·&nbsp; [Admin Panel](https://your-admin.vercel.app) &nbsp;·&nbsp; [API Docs](docs/API.md) &nbsp;·&nbsp; [Deploy Guide](docs/DEPLOYMENT.md)
 
 </div>
 
 ---
 
-# 🧠 1. Problem Statement
-
-The driver booking ecosystem is largely **unstructured and inefficient**:
-
-* No real-time driver availability
-* Manual coordination
-* Lack of centralized system
-* Poor tracking and transparency
+![GoPilot Homepage](./Homepage.png)
 
 ---
 
-# 💡 2. Solution Approach
+## Overview
 
-This platform introduces a **centralized, scalable system**:
-
-* Real-time driver discovery
-* Structured booking lifecycle
-* Secure authentication system
-* Admin-level system control
+**GoPilot** connects discerning clients with elite professional chauffeurs. Built on the MERN stack, it delivers a modern editorial design, real-time availability, secure Razorpay payments, and a full-featured admin dashboard — deployed via Docker on Render (backend) and Vercel (frontend + admin).
 
 ---
 
-# 🏗️ 3. System Architecture
+## Features
 
-## 🔷 High-Level Architecture
+<table>
+<tr>
+<td valign="top" width="33%">
 
-```id="arch1"
-Client (React - Vite)
-        ↓
-REST API (Node.js + Express)
-        ↓
-Database (MongoDB Atlas)
+**Client App**
+- Browse & filter elite pilots
+- Real-time availability search
+- Booking with fare calculation
+- Razorpay payment integration
+- User dashboard & booking history
+- Email verification & password reset
+
+</td>
+<td valign="top" width="33%">
+
+**Admin Panel**
+- Dashboard analytics & KPIs
+- User & driver management
+- Booking oversight & status control
+- Bulk notifications via email
+- Role-based access control
+- Driver approval workflow
+
+</td>
+<td valign="top" width="33%">
+
+**Backend API**
+- RESTful API with JWT auth
+- Refresh token rotation
+- Rate limiting & brute-force protection
+- ImageKit photo/document uploads
+- Brevo transactional emails
+- MongoDB geospatial queries
+
+</td>
+</tr>
+</table>
+
+---
+
+## Tech Stack
+
+| Layer | Technologies |
+|-------|-------------|
+| **Frontend** | React 18, Vite 6, React Router 7, Tailwind CSS 3, Framer Motion, Axios, Sonner |
+| **Admin** | React 18, Vite 6, Tailwind CSS 3, Recharts, Lucide React |
+| **Backend** | Node.js 20, Express 4, MongoDB 7, Mongoose, JWT, bcrypt, Helmet, Multer |
+| **Infrastructure** | Docker (multi-stage), Render (backend), Vercel (frontend + admin) |
+| **External Services** | Razorpay (payments), ImageKit (media), Brevo (email), MongoDB Atlas |
+
+---
+
+## Project Structure
+
+```
+gopilot/
+├── frontend/               # Client React app (Vite + Tailwind)
+│   ├── src/
+│   │   ├── pages/          # Route-level pages (lazy loaded)
+│   │   ├── components/     # Shared + layout components
+│   │   ├── context/        # Auth context
+│   │   ├── hooks/          # Custom hooks
+│   │   └── services/       # API layer (Axios)
+│   └── vercel.json         # SPA routing + security headers
+│
+├── admin/                  # Admin dashboard React app
+│   ├── src/
+│   └── vercel.json         # SPA routing + security headers
+│
+├── backend/                # Express REST API
+│   ├── controllers/        # Route handlers
+│   ├── models/             # Mongoose schemas
+│   ├── routes/             # Express routers
+│   ├── middleware/         # Auth, validation, rate limiting
+│   ├── utils/              # Email, file upload, helpers
+│   ├── Dockerfile          # Multi-stage production image
+│   └── render.yaml         # Render deployment blueprint
+│
+├── docs/                   # Documentation
+│   ├── API.md              # Full API endpoint reference
+│   ├── DEPLOYMENT.md       # Render + Vercel deployment guide
+│   ├── SETUP.md            # Local development setup
+│   ├── CONTRIBUTING.md     # Contribution guidelines
+│   └── .env.example        # Environment variables template
+│
+├── logo.png
+├── Homepage.png
+├── LICENSE
+└── README.md
 ```
 
 ---
 
-## 🔷 Component-Level Architecture
+## Quick Start
 
-```id="arch2"
-[Frontend]
-  UI Components → State Management → API Layer
+**Prerequisites:** Node.js 20+, MongoDB (local or Atlas), npm
 
-[Backend]
-  Routes → Controllers → Services → Models → Database
+```bash
+# 1. Clone
+git clone https://github.com/Lagadnakul/gopilot.git
+cd gopilot
 
-[External]
-  ImageKit (Media Storage)
+# 2. Backend
+cd backend
+cp ../.env.example .env    # Fill in your values
+npm install
+npm run dev                # Runs on http://localhost:4000
+
+# 3. Frontend (new terminal)
+cd frontend
+npm install
+npm run dev                # Runs on http://localhost:5173
+
+# 4. Admin (new terminal)
+cd admin
+npm install
+npm run dev                # Runs on http://localhost:5174
 ```
 
 ---
 
-## 🔷 Request Lifecycle
+## Environment Variables
 
-```id="flow1"
-User Action
-   ↓
-Frontend (API Call)
-   ↓
-Express Router
-   ↓
-Middleware (Auth / Validation)
-   ↓
-Controller
-   ↓
-Service Layer
-   ↓
-Database Query (MongoDB)
-   ↓
-Response → UI Update
+Copy `docs/.env.example` to `backend/.env` and fill in your values:
+
+```env
+# Server
+PORT=4000
+NODE_ENV=development
+MONGO_URI=mongodb+srv://...
+JWT_SECRET=your-32-char-minimum-secret
+JWT_REFRESH_SECRET=another-32-char-secret
+
+# URLs (update for production)
+FRONTEND_URL=http://localhost:5173
+ADMIN_URL=http://localhost:5174
+
+# External Services
+RAZORPAY_KEY_ID=rzp_test_...
+RAZORPAY_KEY_SECRET=...
+BREVO_API_KEY=...
+BREVO_FROM_EMAIL=noreply@yourdomain.com
+IMAGEKIT_PUBLIC_KEY=...
+IMAGEKIT_PRIVATE_KEY=...
+IMAGEKIT_URL_ENDPOINT=https://ik.imagekit.io/your-id
+```
+
+```env
+# Frontend & Admin (.env in each folder)
+VITE_API_URL=http://localhost:4000/api
+VITE_RAZORPAY_KEY_ID=rzp_test_...
+```
+
+> See [`docs/.env.example`](docs/.env.example) for the full list.
+
+---
+
+## Deployment
+
+### Backend → Render
+
+Render picks up `backend/render.yaml` automatically. Set secrets in the Render dashboard (any `sync: false` env var).
+
+```bash
+# Or deploy manually via Docker
+docker build -t gopilot-api ./backend
+docker run -p 4000:4000 --env-file backend/.env gopilot-api
+```
+
+### Frontend & Admin → Vercel
+
+Each app has its own `vercel.json` pre-configured with SPA rewrites and security headers. Import each as a separate Vercel project and set `VITE_API_URL` to your Render backend URL.
+
+> Full guide: [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md)
+
+---
+
+## API Documentation
+
+Full endpoint reference with request/response examples in [docs/API.md](docs/API.md).
+
+Key endpoint groups:
+
+| Group | Base Path |
+|-------|-----------|
+| Auth | `/api/auth` |
+| Users | `/api/users` |
+| Drivers | `/api/drivers` |
+| Bookings | `/api/bookings` |
+| Payments | `/api/payments` |
+| Admin | `/api/admin` |
+
+---
+
+## Contributing
+
+Contributions are welcome. See [docs/CONTRIBUTING.md](docs/CONTRIBUTING.md) for guidelines.
+
+```bash
+# Standard workflow
+git checkout -b feature/your-feature
+# make changes
+git commit -m "feat: add your feature"
+git push origin feature/your-feature
+# open a Pull Request
 ```
 
 ---
 
-# 🔐 4. Authentication & Security Flow
+## License
 
-```id="authflow"
-User Login
-   ↓
-Credential Verification
-   ↓
-JWT Token Generation
-   ↓
-Token stored on client
-   ↓
-Protected API requests
-   ↓
-Middleware validates token
-```
-
-### Security Measures
-
-* JWT-based authentication
-* Password hashing
-* Environment variable protection
-* CORS security
-* Input validation
-
----
-
-# 📦 5. Database Design
-
-## 🔹 Core Entities
-
-### User
-
-* name
-* email
-* password
-* role
-
-### Driver
-
-* name
-* experience
-* availability
-* rating
-
-### Booking
-
-* userId
-* driverId
-* bookingDate
-* status
-
----
-
-## 🔷 Relationship Model
-
-```id="dbrel"
-User 1 ──── * Booking * ──── 1 Driver
-```
-
----
-
-# ⚙️ 6. API Design Philosophy
-
-* RESTful architecture
-* Stateless communication
-* Modular routing
-* Standard HTTP status codes
-
----
-
-# 📡 7. Key API Flows
-
-### Booking Flow
-
-```id="bookingflow"
-User selects driver
-   ↓
-Request sent to API
-   ↓
-Driver availability checked
-   ↓
-Booking created
-   ↓
-Response returned
-```
-
----
-
-### Driver Fetch Flow
-
-```id="driverflow"
-User opens dashboard
-   ↓
-API fetches drivers
-   ↓
-Filters applied
-   ↓
-Results displayed
-```
-
----
-
-# 🚀 8. Deployment Architecture
-
-### Frontend
-
-* Hosted on Vercel
-* Optimized build via Vite
-
-### Backend
-
-* Hosted on Vercel / Render
-* Stateless API design
-
-### Database
-
-* MongoDB Atlas (Cloud DB)
-
----
-
-# ⚡ 9. Performance Considerations
-
-* Optimized API responses
-* Lean database queries
-* Component-based frontend rendering
-* Separation of concerns
-
----
-
-# 🔄 10. Scalability Strategy
-
-Future improvements designed for scale:
-
-* Redis caching layer
-* WebSockets (real-time updates)
-* Microservices architecture
-* Load balancing
-* CDN for assets
-
----
-
-# 🧪 11. Testing Strategy (Planned)
-
-* API testing (Postman)
-* Unit testing (Jest)
-* Integration testing
-
----
-
-# 📁 12. Project Structure
-
-```id="structure"
-Car-Drivers/
-├── frontend/
-├── backend/
-│   ├── routes/
-│   ├── controllers/
-│   ├── services/
-│   ├── models/
-│   ├── middleware/
-├── admin/
-```
-
----
-
-# 📸 13. Screenshots
-
-
-<img width="1895" height="864" alt="image" src="https://github.com/user-attachments/assets/f23bf3b3-2d63-4a0f-903d-de5834e7a40c" />
-
----
-
-# 🛣️ 14. Roadmap
-
-* Payment gateway integration
-* Real-time tracking
-* Push notifications
-* Mobile application
-
----
-
-# 📊 15. Key Learnings
-
-* Full-stack system design
-* API architecture
-* Authentication handling
-* Deployment pipelines
-
----
-
-# 🤝 16. Contributing
-
-Open to contributions and improvements.
-
----
-
-# 📬 17. Contact
-
-GitHub: https://github.com/Lagadnakul
+Licensed under the [MIT License](LICENSE).
 
 ---
 
 <div align="center">
-
-🔥 Built by Nakul — Full Stack Developer (MERN + AI)
-
+  <sub>Built by <a href="https://github.com/Lagadnakul">Lagadnakul</a> · Designed with precision, deployed with confidence.</sub>
 </div>

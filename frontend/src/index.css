@@ -1,3 +1,116 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    /* Modern Editorial Design System */
+    --background: #fbf9f9; /* Paper */
+    --foreground: #1b1c1c; /* Ink (on-background) */
+    --surface: #fbf9f9;
+    --on-surface: #1b1c1c;
+    --primary: #000000;
+    --on-primary: #ffffff;
+    --border: #c4c7c7;
+    --ring: #000000;
+    --radius: 0px;
+
+    /* Custom scrollbar for editorial feel */
+    --scrollbar-thumb: #e3e2e2;
+    --scrollbar-track: #fbf9f9;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    background-color: var(--background);
+    color: var(--foreground);
+    font-family: 'Hanken Grotesk', system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+    overflow-x: hidden;
+  }
+
+  /* Typography hierarchy */
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Bodoni Moda', serif;
+    font-weight: 700;
+    line-height: 1.1;
+    color: var(--foreground);
+  }
+
+  h1 { font-size: clamp(2.5rem, 8vw, 7.5rem); }
+  h2 { font-size: clamp(1.8rem, 5vw, 5rem); }
+  h3 { font-size: clamp(1.3rem, 3vw, 3rem); }
+  h4 { font-size: clamp(1rem, 2vw, 2rem); }
+
+  /* Selection color */
+  ::selection {
+    background-color: #3d0506;
+    color: #c26b65;
+  }
+}
+
+@layer components {
+  /* Primary Button - Solid Ink */
+  .btn-primary {
+    @apply px-6 py-3 bg-primary text-on-primary font-ui-button text-ui-button uppercase tracking-widest;
+    @apply hover:bg-on-surface transition-colors duration-300;
+    @apply active:scale-[0.99];
+  }
+
+  /* Secondary Button - Paper with 1px Ink border */
+  .btn-secondary {
+    @apply px-6 py-3 bg-surface border border-primary text-primary font-ui-button text-ui-button uppercase tracking-widest;
+    @apply hover:bg-primary hover:text-on-primary transition-colors duration-300;
+  }
+
+  /* Cards - top-border only, no background or shadows */
+  .card-editorial {
+    @apply border-t border-primary pt-6 pb-10;
+  }
+
+  /* Input - bottom border only */
+  .input-editorial {
+    @apply w-full bg-transparent border-0 border-b border-outline-variant focus:border-primary focus:ring-0;
+    @apply font-body-lg text-body-lg text-primary placeholder-outline py-4 px-0 transition-colors;
+    @apply rounded-none outline-none;
+  }
+
+  /* UI Label */
+  .label-editorial {
+    @apply font-ui-label text-ui-label uppercase tracking-widest text-on-surface-variant mb-2 block;
+  }
+
+  /* Heading Display */
+  .heading-display {
+    @apply font-display-xl text-display-xl text-primary leading-90 tracking-tighter;
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 4px;
+}
+::-webkit-scrollbar-track {
+  background: var(--scrollbar-track);
+}
+::-webkit-scrollbar-thumb {
+  background: var(--scrollbar-thumb);
+  border-radius: 0;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #c4c7c7;
+}
+
+/* Utility: softer images */
+.grayscale-editorial {
+  filter: grayscale(0.7) contrast(1.1);
+}
+
+/* No webkit tap highlight */
+* {
+  -webkit-tap-highlight-color: transparent;
+}

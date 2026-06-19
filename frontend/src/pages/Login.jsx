@@ -1,25 +1,20 @@
-import React, { useState } from 'react';
+import usePageTitle from '../hooks/usePageTitle';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { toast } from 'react-toastify';
 import { useAuth } from '../hooks/useAuth';
-import { FaEnvelope, FaLock } from 'react-icons/fa';
 
 const Login = () => {
-  const [formData, setFormData] = useState({
-    email: '',
-    password: ''
-  });
+  usePageTitle('Sign In');
+  const [formData, setFormData] = useState({ email: '', password: '' });
   const [error, setError] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value
-    }));
+    setFormData(prev => ({ ...prev, [name]: value }));
     if (error) setError('');
   };
 
@@ -27,99 +22,183 @@ const Login = () => {
     e.preventDefault();
     setIsLoading(true);
     setError('');
-
     try {
       await login(formData);
-      toast.success('Login successful!');
-      navigate('/'); // Redirect to home page after login
+      navigate('/');
     } catch (err) {
-      setError(err.response?.data?.message || 'Login failed');
-      toast.error(err.response?.data?.message || 'Login failed');
+      setError(err.response?.data?.message || 'Login failed. Please check your credentials.');
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-md w-full space-y-8 bg-white p-8 rounded-xl shadow-lg">
-        <div className="text-center">
-          <h2 className="text-3xl font-extrabold text-gray-900">Sign in</h2>
-          <p className="mt-2 text-sm text-gray-600">
-            Don't have an account?{' '}
-            <Link to="/register" className="font-medium text-primary hover:text-primary/80">
-              Register
-            </Link>
+    <div className="min-h-screen flex flex-col md:flex-row bg-surface antialiased">
+      {/* Mobile nav */}
+      <nav className="md:hidden flex justify-between items-center px-gutter py-gutter border-b border-outline-variant bg-surface sticky top-0 z-50">
+        <span className="font-headline-lg text-headline-lg-mobile italic tracking-tight text-primary">GoPilot</span>
+        <span className="font-ui-label text-ui-label text-secondary tracking-widest uppercase">Secure Access</span>
+      </nav>
+
+      {/* Left — Brand Panel */}
+      <div className="hidden md:flex md:w-1/2 relative bg-primary-container flex-col justify-end p-margin-edge overflow-hidden">
+        <div className="absolute inset-0 z-0">
+          <img
+            src="https://lh3.googleusercontent.com/aida-public/AB6AXuC0mfnmi32c5xegBoyiazoUiv9ZEbR9gSY93vpIFaLISLA8JlKnBjAtO9NOKv04e4pcHBi0gKVHBtUh0Np7IMAlkgO5rATUtKkYTVAvQL1hlfxpCG1Md-ll54Hq1calSH2sSU3dMyT0tN7b1JQIk29WjuLlks8kIQczuxOaxLmc24pL7zl1mVlz82KhiUYQigvCrIgob93cCG8f3uBgUTMOpJkRYkyqUUMTrqTw-sPfZzFCm5v0miIjIh7Kx9aWJLGbKMhvHJXdbEI"
+            alt="Luxury vehicle interior"
+            loading="lazy"
+            className="w-full h-full object-cover opacity-60 mix-blend-luminosity"
+          />
+        </div>
+        <div className="absolute inset-0 z-10 bg-gradient-to-t from-primary-container via-primary-container/60 to-transparent" />
+        <div className="relative z-20 text-on-primary">
+          <div className="mb-gutter flex items-center space-x-2">
+            <span className="material-symbols-outlined text-[16px]">lock</span>
+            <span className="font-ui-label text-ui-label tracking-widest uppercase opacity-70">Private Classified</span>
+          </div>
+          <h1 className="font-headline-lg text-display-lg text-on-primary mb-6 leading-none italic max-w-lg">
+            THE GATEWAY<br />TO PRECISION
+          </h1>
+          <p className="font-body-lg text-body-lg opacity-70 max-w-md border-l border-on-primary pl-4">
+            Elite Logistical Choreography.
           </p>
         </div>
+      </div>
 
-        {error && (
-          <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
-            <div className="flex">
-              <div className="ml-3">
-                <p className="text-sm text-red-700">{error}</p>
-              </div>
-            </div>
+      {/* Right — Form */}
+      <div className="w-full md:w-1/2 flex items-center justify-center px-gutter py-16 md:p-margin-edge bg-surface relative min-h-[calc(100vh-80px)] md:min-h-screen">
+        <div className="hidden md:block absolute top-margin-edge left-margin-edge font-headline-lg text-headline-lg-mobile italic tracking-tight text-primary opacity-10 pointer-events-none select-none">
+          GoPilot
+        </div>
+
+        <div className="w-full max-w-md relative z-10">
+          {/* Header */}
+          <div className="mb-16">
+            <h2 className="font-headline-lg text-headline-lg-mobile md:text-headline-lg text-primary mb-4">
+              SIGN IN
+            </h2>
+            <div className="w-16 h-px bg-primary" />
           </div>
-        )}
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
-          <div className="rounded-md shadow-sm -space-y-px">
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FaEnvelope className="h-5 w-5 text-gray-400" />
-              </div>
+          {error && (
+            <div className="mb-8 p-4 border border-error/30 bg-error-container/20 text-error">
+              <p className="font-ui-label text-ui-label uppercase tracking-widest">{error}</p>
+            </div>
+          )}
+
+          <form onSubmit={handleSubmit} className="space-y-8">
+            {/* Email */}
+            <div className="relative group">
+              <label
+                htmlFor="email"
+                className="block font-ui-label text-ui-label uppercase text-on-surface-variant mb-2 transition-colors group-focus-within:text-primary"
+              >
+                Email Address
+              </label>
               <input
                 id="email"
                 name="email"
                 type="email"
-                autoComplete="email"
-                required
-                className="appearance-none rounded-t-md relative block w-full px-3 py-3 pl-10 border border-gray-300 placeholder-gray-500 text-gray-900 focus:ring-primary focus:border-primary focus:z-10 sm:text-sm"
-                placeholder="Email address"
                 value={formData.email}
                 onChange={handleChange}
-              />
-            </div>
-            <div className="relative">
-              <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                <FaLock className="h-5 w-5 text-gray-400" />
-              </div>
-              <input
-                id="password"
-                name="password"
-                type="password"
-                autoComplete="current-password"
+                placeholder="Enter your email"
                 required
-                className="appearance-none rounded-b-md relative block w-full px-3 py-3 pl-10 border border-gray-300 placeholder-gray-500 text-gray-900 focus:ring-primary focus:border-primary focus:z-10 sm:text-sm"
-                placeholder="Password"
-                value={formData.password}
-                onChange={handleChange}
+                aria-invalid={!!error}
+                className="w-full bg-transparent border-0 border-b border-outline-variant focus:border-primary focus:ring-0 px-0 py-3 font-body-md text-body-md text-primary placeholder-outline transition-colors outline-none"
               />
             </div>
-          </div>
 
-          <button
-            type="submit"
-            disabled={isLoading}
-            className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-primary hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-70 disabled:cursor-not-allowed"
-          >
-            {isLoading ? (
-              <span className="flex items-center">
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Signing in...
-              </span>
-            ) : (
-              'Sign in'
-            )}
-          </button>
-        </form>
+            {/* Password */}
+            <div className="relative group">
+              <label
+                htmlFor="password"
+                className="block font-ui-label text-ui-label uppercase text-on-surface-variant mb-2 transition-colors group-focus-within:text-primary"
+              >
+                Password
+              </label>
+              <div className="relative">
+                <input
+                  id="password"
+                  name="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={formData.password}
+                  onChange={handleChange}
+                  placeholder="Enter your password"
+                  required
+                  aria-invalid={!!error}
+                  className="w-full bg-transparent border-0 border-b border-outline-variant focus:border-primary focus:ring-0 px-0 py-3 pr-8 font-body-md text-body-md text-primary placeholder-outline transition-colors outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(v => !v)}
+                  className="absolute right-0 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors"
+                  aria-label={showPassword ? 'Hide password' : 'Show password'}
+                >
+                  <span className="material-symbols-outlined text-[20px]">
+                    {showPassword ? 'visibility_off' : 'visibility'}
+                  </span>
+                </button>
+              </div>
+            </div>
+
+            {/* Utility row */}
+            <div className="flex items-center justify-between pt-4">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input
+                  type="checkbox"
+                  className="h-4 w-4 border-outline-variant text-primary focus:ring-primary focus:ring-offset-surface bg-transparent cursor-pointer"
+                />
+                <span className="font-ui-label text-ui-label uppercase text-on-surface-variant">Remember Me</span>
+              </label>
+              <Link
+                to="/forgot-password"
+                className="font-ui-label text-ui-label uppercase text-primary border-b border-transparent hover:border-primary transition-colors pb-0.5"
+              >
+                Forgot Password?
+              </Link>
+            </div>
+
+            {/* Submit */}
+            <div className="pt-8 space-y-6">
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="w-full flex justify-center items-center gap-2 py-4 px-8 font-ui-button text-ui-button uppercase tracking-[0.15em] text-on-primary bg-primary hover:bg-inverse-surface focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                {isLoading ? (
+                  <>
+                    <Spinner />
+                    SIGNING IN...
+                  </>
+                ) : (
+                  'SIGN IN'
+                )}
+              </button>
+
+              <div className="text-center pt-8 border-t border-outline-variant/30">
+                <Link
+                  to="/register"
+                  className="font-ui-label text-ui-label uppercase text-on-surface-variant hover:text-primary transition-colors inline-flex items-center space-x-2 group"
+                >
+                  <span>Create an Account</span>
+                  <span className="material-symbols-outlined text-[16px] transform group-hover:translate-x-1 transition-transform">
+                    arrow_forward
+                  </span>
+                </Link>
+              </div>
+            </div>
+          </form>
+        </div>
       </div>
     </div>
   );
 };
+
+const Spinner = () => (
+  <svg className="animate-spin h-4 w-4" fill="none" viewBox="0 0 24 24">
+    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" />
+  </svg>
+);
 
 export default Login;

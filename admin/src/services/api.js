@@ -1,7 +1,6 @@
 import axios from 'axios';
 
-// Base URL - update this with your actual backend URL
-const BASE_URL = 'http://localhost:4000/api';
+const BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:4000/api';
 
 // Create Axios instance
 const api = axios.create({
@@ -46,44 +45,66 @@ api.interceptors.response.use(
 
 // Auth endpoints
 export const authAPI = {
-  login: (credentials) => api.post('/admin/auth/login', credentials),
-  logout: () => api.post('/admin/auth/logout'),
-  getProfile: () => api.get('/admin/profile'),
+  login:      (credentials) => api.post('/auth/login', credentials),
+  logout:     ()             => api.post('/auth/logout'),
+  getProfile: ()             => api.get('/auth/me'),
 };
 
 // User endpoints
 export const userAPI = {
-  getAll: (params) => api.get('/admin/users', { params }),
-  getById: (id) => api.get(`/admin/users/${id}`),
-  create: (userData) => api.post('/admin/users', userData),
-  update: (id, userData) => api.put(`/admin/users/${id}`, userData),
-  delete: (id) => api.delete(`/admin/users/${id}`),
+  getAll:     (params)             => api.get('/admin/users', { params }),
+  getById:    (id)                 => api.get(`/admin/users/${id}`),
+  getStats:   (id)                 => api.get(`/admin/users/${id}/stats`),
+  create:     (userData)           => api.post('/admin/users', userData),
+  update:     (id, userData)       => api.put(`/admin/users/${id}`, userData),
+  delete:     (id)                 => api.delete(`/admin/users/${id}`),
+  bulkUpdate: (ids, updates)       => api.patch('/admin/users/bulk-update', { ids, updates }),
 };
 
 // Driver endpoints
 export const driverAPI = {
-  getAll: (params) => api.get('/admin/drivers', { params }),
-  getById: (id) => api.get(`/admin/drivers/${id}`),
-  verify: (id, status, comments) => api.put(`/admin/drivers/${id}/verify`, { status, comments }),
-  update: (id, driverData) => api.put(`/admin/drivers/${id}`, driverData),
-  delete: (id) => api.delete(`/admin/drivers/${id}`),
+  getAll:     (params)             => api.get('/admin/drivers', { params }),
+  getById:    (id)                 => api.get(`/admin/drivers/${id}`),
+  getStats:   (id)                 => api.get(`/admin/drivers/${id}/stats`),
+  create:     (driverData)         => api.post('/admin/drivers', driverData),
+  approve:    (id)                 => api.patch(`/admin/drivers/${id}/status`, { status: 'active' }),
+  suspend:    (id, reason)         => api.patch(`/admin/drivers/${id}/status`, { status: 'suspended', reason }),
+  update:     (id, driverData)     => api.put(`/admin/drivers/${id}`, driverData),
+  delete:     (id)                 => api.delete(`/admin/drivers/${id}`),
+  bulkUpdate: (ids, updates)       => api.patch('/admin/drivers/bulk-update', { ids, updates }),
 };
 
 // Booking endpoints
 export const bookingAPI = {
-  getAll: (params) => api.get('/admin/bookings', { params }),
-  getById: (id) => api.get(`/admin/bookings/${id}`),
-  updateStatus: (id, status) => api.put(`/admin/bookings/${id}/status`, { status }),
-  create: (bookingData) => api.post('/admin/bookings', bookingData),
-  delete: (id) => api.delete(`/admin/bookings/${id}`),
+  getAll:       (params)           => api.get('/admin/bookings', { params }),
+  getById:      (id)               => api.get(`/admin/bookings/${id}`),
+  updateStatus: (id, status, note) => api.patch(`/admin/bookings/${id}/status`, { status, note }),
+  delete:       (id)               => api.delete(`/admin/bookings/${id}`),
 };
 
 // Dashboard endpoints
 export const dashboardAPI = {
-  getSummary: () => api.get('/admin/dashboard/summary'),
-  getRecentBookings: () => api.get('/admin/dashboard/recent-bookings'),
-  getRevenue: (period) => api.get(`/admin/dashboard/revenue?period=${period}`),
-  getUserGrowth: (period) => api.get(`/admin/dashboard/user-growth?period=${period}`),
+  getSummary:        ()              => api.get('/admin/dashboard'),
+  getRecentBookings: (limit = 10)    => api.get('/admin/bookings', { params: { limit, page: 1 } }),
+  getAnalytics:      (type, period)  => api.get('/admin/analytics', { params: { type, period } }),
+};
+
+// Reports — export falls back gracefully if not implemented
+export const reportAPI = {
+  generate: (type, startDate, endDate) => api.post('/admin/reports/generate', { type, startDate, endDate }),
+  export:   (type) => api.post('/admin/export', { type }, { responseType: 'blob' }),
+};
+
+export const settingsAPI = {
+  getSystemInfo: () => api.get('/admin/settings'),
+  update:        (settings) => api.put('/admin/settings', settings),
+};
+
+// Profile uses shared auth + users routes
+export const profileAPI = {
+  get:            ()     => api.get('/auth/me'),
+  update:         (data) => api.put('/auth/profile', data),
+  updatePassword: (data) => api.put('/users/password', data),
 };
 
 // Export the full API instance as default

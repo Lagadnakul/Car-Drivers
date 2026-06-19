@@ -1,32 +1,46 @@
 import { createContext, useEffect, useState } from 'react';
-//eslint-disable-next-line
-import { toast } from 'react-toastify';
+import { toast } from 'sonner';
 import { endpoints } from '../services/api';
 
 export const AuthContext = createContext(null);
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true); // true until first auth check completes
   const [authError, setAuthError] = useState(null);
 
   useEffect(() => {
-    try {
-      const storedUser = localStorage.getItem('user');
-      if (storedUser && storedUser !== 'undefined') {
-        setUser(JSON.parse(storedUser));
-      } else {
-        // Clear invalid data
-        localStorage.removeItem('user');
-        localStorage.removeItem('token');
-        setUser(null);
-      }
-    } catch (error) {
-      console.error('Error parsing stored user:', error);
-      localStorage.removeItem('user');
-      localStorage.removeItem('token');
-      setUser(null);
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setLoading(false);
+      return;
     }
+
+    // Validate token is still alive and get fresh user data
+    endpoints.auth.getMe()
+      .then((res) => {
+        const freshUser = res.data?.data;
+        // Validate shape — must have _id, name, email, role
+        if (
+          freshUser &&
+          typeof freshUser === 'object' &&
+          freshUser._id &&
+          typeof freshUser.name === 'string' &&
+          typeof freshUser.email === 'string'
+        ) {
+          localStorage.setItem('user', JSON.stringify(freshUser));
+          setUser(freshUser);
+        } else {
+          throw new Error('Invalid user shape from /auth/me');
+        }
+      })
+      .catch(() => {
+        localStorage.removeItem('token');
+        localStorage.removeItem('refreshToken');
+        localStorage.removeItem('user');
+        setUser(null);
+      })
+      .finally(() => setLoading(false));
   }, []);
 
   const clearError = () => {
@@ -43,9 +57,16 @@ export const AuthProvider = ({ children }) => {
       toast.success('Registration successful! Please log in.');
       return response.data;
     } catch (err) {
-      const message = err.response?.data?.message || 'Registration failed';
+      // Extract detailed validation errors if present
+      const responseErrors = err.response?.data?.errors;
+      let message;
+      if (Array.isArray(responseErrors) && responseErrors.length > 0) {
+        message = responseErrors.join('. ');
+      } else {
+        message = err.response?.data?.message || 'Registration failed';
+      }
       setAuthError(message);
-      toast.error(message);
+      // Don't show toast here — let Register.jsx handle inline display
       throw err;
     } finally {
       setLoading(false);
@@ -60,20 +81,21 @@ export const AuthProvider = ({ children }) => {
         email: credentials.email,
         password: credentials.password
       });
-      
-      const { data: userData, token } = response.data;
-      
+
+      const { data: userData, token, refreshToken } = response.data;
+
       localStorage.setItem('token', token);
+      if (refreshToken) localStorage.setItem('refreshToken', refreshToken);
       localStorage.setItem('user', JSON.stringify(userData));
-      
+
       setUser(userData);
       toast.success('Login successful!');
-      
+
       return response.data;
     } catch (err) {
       const message = err.response?.data?.message || 'Login failed';
       setAuthError(message);
-      toast.error(message);
+      // Don't show toast here — let Login.jsx handle inline display
       throw err;
     } finally {
       setLoading(false);
@@ -85,6 +107,7 @@ export const AuthProvider = ({ children }) => {
       setAuthError(null);
       await endpoints.auth.logout();
       localStorage.removeItem('token');
+      localStorage.removeItem('refreshToken');
       localStorage.removeItem('user');
       setUser(null);
       toast.success('Logged out successfully');
