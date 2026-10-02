@@ -17,8 +17,10 @@
 
 ### 🌐 Live System
 
-🚀 Frontend: https://car-drivers-frontend-7r6i.vercel.app
-⚙️ Backend API: https://car-drivers-backend-7yig.vercel.app
+🚀 Frontend: https://car-drivers-frontend.vercel.app
+
+> ⚠️ The backend API is not currently deployed, so the live frontend runs
+> without a server. Run it locally (see Setup below) for the full flow.
 
 </div>
 
