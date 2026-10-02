@@ -17,10 +17,15 @@
 
 ### 🌐 Live System
 
-🚀 Frontend: https://car-drivers-frontend.vercel.app
+| App | Status | URL |
+|-----|--------|-----|
+| 🚀 Customer frontend | live | https://car-drivers-frontend.vercel.app |
+| 🛠️ Admin dashboard | not deployed | — |
+| ⚙️ Backend API | not deployed | — |
 
-> ⚠️ The backend API is not currently deployed, so the live frontend runs
-> without a server. Run it locally (see Setup below) for the full flow.
+> ⚠️ Only the customer frontend is deployed, and it has no API behind it, so
+> data-driven screens will not load. See **§8 Deployment** to stand up the
+> backend on Render and the admin on Vercel.
 
 </div>
 
@@ -203,19 +208,76 @@ Results displayed
 
 # 🚀 8. Deployment Architecture
 
-### Frontend
+Three deployable units. The backend is a long-running Node server, so it goes
+on Render; the two Vite apps are static builds and go on Vercel.
 
-* Hosted on Vercel
-* Optimized build via Vite
+### Backend API → Render
 
-### Backend
+The repo root is an **npm workspace**. Deploying from the root runs
+`npm run build` across every workspace, and `backend` has no build script —
+that fails with `Missing script: "build"`. Point Render at `backend/` instead:
 
-* Hosted on Vercel / Render
-* Stateless API design
+| Setting | Value |
+|---------|-------|
+| Root Directory | `backend` |
+| Build Command | `npm install` |
+| Start Command | `npm start` |
+| Health Check Path | `/api/health` |
+
+`render.yaml` in the repo root already encodes this — use **New → Blueprint**
+and Render reads it, rather than setting the fields by hand.
+
+Environment variables to set in the Render dashboard:
+
+```
+MONGO_URI       mongodb+srv://…         # MongoDB Atlas connection string
+JWT_SECRET      <32+ random chars>      # node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
+JWT_EXPIRE      30d
+NODE_ENV        production
+FRONTEND_URL    https://<frontend>.vercel.app
+ADMIN_URL       https://<admin>.vercel.app
+```
+
+> **FRONTEND_URL and ADMIN_URL are the CORS allowlist.** The API rejects
+> browser requests from any origin not listed, so a deployed frontend will fail
+> with a CORS error until these are set. Extra origins (preview deployments)
+> can be added via `CORS_EXTRA_ORIGINS` as a comma-separated list.
+
+> Render's free tier sleeps after 15 minutes idle; the next request takes
+> ~50 seconds to wake it.
+
+### Frontend & Admin → Vercel
+
+Two separate Vercel projects from the same repo, each with its own root:
+
+| | Frontend | Admin |
+|---|---|---|
+| Root Directory | `frontend` | `admin` |
+| Build Command | `npm run build` | `npm run build` |
+| Output Directory | `dist` | `dist` |
+
+Both need one environment variable, pointing at the Render API —
+**including the `/api` suffix**:
+
+```
+VITE_API_URL=https://<your-render-service>.onrender.com/api
+```
+
+See `frontend/.env.example` and `admin/.env.example`. Vite inlines `VITE_*`
+values at build time, so changing this requires a redeploy, not just a restart.
+
+### Order of operations
+
+1. Deploy the backend to Render → note its URL
+2. Deploy frontend and admin to Vercel with `VITE_API_URL` set to that URL
+3. Go back to Render and set `FRONTEND_URL` / `ADMIN_URL` to the Vercel URLs
+4. Redeploy the backend so the new CORS origins take effect
 
 ### Database
 
 * MongoDB Atlas (Cloud DB)
+* Add Render's outbound IPs to the Atlas IP allowlist, or allow `0.0.0.0/0`
+  for a demo deployment
 
 ---
 

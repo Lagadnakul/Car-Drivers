@@ -41,14 +41,24 @@ const startServer = async () => {
     app.locals.dbConnected = dbConnected;
 
     // ✅ CORS - Must be FIRST middleware (before routes)
+    // Local dev ports, plus whatever FRONTEND_URL / ADMIN_URL are set to in
+    // the environment. Deployed origins come from env so this file never has
+    // to change per deployment. CORS_EXTRA_ORIGINS takes a comma-separated list.
+    const allowedOrigins = [
+      "http://localhost:5173",
+      "http://localhost:5174",
+      "http://localhost:5175",
+      "http://localhost:5176",
+      "http://localhost:5177",
+      process.env.FRONTEND_URL,
+      process.env.ADMIN_URL,
+      ...(process.env.CORS_EXTRA_ORIGINS || "").split(",")
+    ]
+      .filter(Boolean)
+      .map((o) => o.trim().replace(/\/$/, ""));
+
     app.use(cors({
-      origin: [
-        "http://localhost:5173",
-        "http://localhost:5174",
-        "http://localhost:5175",
-        "http://localhost:5176",
-        "http://localhost:5177"  // ✅ Added for new frontend port
-      ],
+      origin: allowedOrigins,
       credentials: true,
       methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
       allowedHeaders: ["Content-Type", "Authorization"],

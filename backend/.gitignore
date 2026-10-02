@@ -36,6 +36,6 @@ dist/
 build/
 
 # Misc
-.env.example
+# (.env.example is intentionally committed — it documents required vars)
 temp/
 cache/
